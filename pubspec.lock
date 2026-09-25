@@ -340,10 +340,10 @@ packages:
     dependency: "direct main"
     description:
       name: genui_catalog
-      sha256: bda617f74b31315ef9ed86993cd78c36725b2a11053181e7fb24d5700ee1da63
+      sha256: c4668644ffd3423342cba6e172df36e212379f5dad7d3db067c7897cae4a347c
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.0"
+    version: "0.5.0"
   google_fonts:
     dependency: "direct main"
     description:

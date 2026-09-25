@@ -25,6 +25,7 @@ import '../core/phone/dialer.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/info_card_widget.dart';
 import 'widgets/shared/severity.dart';
+import 'widgets/shared/triage_card.dart';
 import 'widgets/symptom_checker_widget.dart';
 import 'widgets/triage_form_widget.dart';
 import 'widgets/urgency_card_widget.dart';
@@ -46,11 +47,12 @@ abstract final class TriageEvents {
 
 /// The full catalog handed to the `SurfaceController`.
 ///
-/// It mixes our 6 healthcare items with 16 ready-made items from
+/// It mixes our 6 healthcare items with 18 ready-made items from
 /// [genui_catalog](https://pub.dev/packages/genui_catalog): the agent
-/// composes both in the same interface. Left out on purpose: CheckboxGroup
-/// and SwitchGroup (one event, so one LLM round trip, per toggle) and
-/// SearchBar (one per keystroke).
+/// composes both in the same interface. Only SearchBar is left out (one
+/// event, so one LLM round trip, per keystroke). CheckboxGroup and
+/// SwitchGroup are used with `submitLabel`: one event per answer, not per
+/// toggle.
 final triageCatalog = Catalog([
   // Healthcare items, built for this app.
   infoCardItem,
@@ -75,7 +77,9 @@ final triageCatalog = Catalog([
   _animated(kit.statusBadgeItem, stretch: false),
   // genui_catalog: forms.
   _animated(kit.actionFormItem),
-  _animated(kit.selectInputItem),
+  _animated(kit.selectInputItem, card: true),
+  _animated(kit.checkboxGroupItem, card: true),
+  _animated(kit.switchGroupItem, card: true),
   _animated(kit.ratingInputItem),
   // genui_catalog: media.
   _animated(kit.profileCardItem),
@@ -90,16 +94,20 @@ const localOnlyEvents = {
 };
 
 /// Same genui_catalog item, with our staggered entrance animation. Cards
-/// are stretched to the full width, like ours (some hug their content).
-CatalogItem _animated(CatalogItem item, {bool stretch = true}) => CatalogItem(
+/// are stretched to the full width, like ours (some hug their content);
+/// bare inputs ([card]) get a card around them.
+CatalogItem _animated(
+  CatalogItem item, {
+  bool stretch = true,
+  bool card = false,
+}) => CatalogItem(
   name: item.name,
   dataSchema: item.dataSchema,
   widgetBuilder: (ctx) {
-    final child = item.widgetBuilder(ctx);
-    return _entrance(
-      ctx,
-      stretch ? SizedBox(width: double.infinity, child: child) : child,
-    );
+    Widget child = item.widgetBuilder(ctx);
+    if (card) child = TriageCard(child: child);
+    if (stretch) child = SizedBox(width: double.infinity, child: child);
+    return _entrance(ctx, child);
   },
 );
 

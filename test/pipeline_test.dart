@@ -85,8 +85,8 @@ String _errors(_Harness h) =>
 void main() {
   final examples = _examples();
 
-  test('the prompt contains the 12 documented examples', () {
-    expect(examples, hasLength(12));
+  test('the prompt contains the 13 documented examples', () {
+    expect(examples, hasLength(13));
   });
 
   // Every example must pass genui's schema validation and render, including
@@ -96,7 +96,15 @@ void main() {
     ['À faire dès maintenant', 'Buvez souvent', 'Se protéger du paludisme'],
     ['Température', '39,2 °C', 'Fièvre depuis'],
     ['Votre fiche', 'Prénom', 'Créer ma fiche'],
-    ['Afi', '34 ans · Urgence modérée', 'Vos symptômes', 'Votre consultation'],
+    ['Vos antécédents', 'Drépanocytose', 'Valider'],
+    [
+      'Afi',
+      '34 ans · Urgence modérée',
+      'Vos symptômes',
+      'Votre consultation',
+      'Rappel par SMS',
+      'Enregistrer',
+    ],
     ["Âge de l'enfant"],
     ['Température (°C)'],
     ['Je suis là pour votre santé'],
@@ -203,5 +211,38 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 50));
     expect(_errors(h), contains('HeartRateChart'));
+  });
+
+  testWidgets('CheckboxGroup sends the history once, on "Valider"', (
+    tester,
+  ) async {
+    final h = _Harness();
+    addTearDown(h.dispose);
+    await _render(tester, h, examples[8]);
+
+    await tester.tap(find.text('Enceinte'));
+    await tester.tap(find.text('Diabète'));
+    await tester.pump();
+    expect(h.submitted, isEmpty, reason: 'checking a box stays local');
+
+    await tester.ensureVisible(find.text('Valider'));
+    await tester.tap(find.text('Valider'));
+    await tester.pump();
+    expect(h.submitted, hasLength(1));
+    expect(_payloads(h), contains('medical_history:pregnancy,diabetes'));
+  });
+
+  testWidgets('RatingInput sends the rating to the agent', (tester) async {
+    final h = _Harness();
+    addTearDown(h.dispose);
+    await _render(tester, h, examples[9]);
+
+    final stars = find.byIcon(Icons.star_border);
+    await tester.ensureVisible(stars.first);
+    await tester.tap(stars.at(3));
+    await tester.pump();
+    final payload = _payloads(h);
+    expect(payload, contains('rating_submitted'));
+    expect(payload, contains('"rating":4'));
   });
 }
