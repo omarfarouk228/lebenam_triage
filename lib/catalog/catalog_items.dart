@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// THE CATALOG — the contract between Gemini and Flutter.
+// THE CATALOG: the contract between Gemini and Flutter.
 //
 // A CatalogItem has three parts:
 //   1. name        → the word the LLM writes in `"component": "UrgencyCard"`
@@ -369,11 +369,11 @@ Widget _entrance(CatalogItemContext ctx, Widget child) {
   final index = children is List ? children.indexOf(ctx.id) : 0;
   return child
       .animate(delay: (120 * (index < 0 ? 0 : index)).ms)
-      .fadeIn(duration: 450.ms, curve: Curves.easeOut)
+      .fadeIn(duration: 400.ms, curve: Curves.easeOut)
       .slideY(
-        begin: 0.12,
+        begin: 0.06,
         end: 0,
-        duration: 450.ms,
+        duration: 400.ms,
         curve: Curves.easeOutCubic,
       );
 }

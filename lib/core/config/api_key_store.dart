@@ -17,7 +17,7 @@ class ApiKeyStore {
   /// The Gemini model; override with `--dart-define=GEMINI_MODEL=...`.
   static const model = String.fromEnvironment(
     'GEMINI_MODEL',
-    defaultValue: 'gemini-2.5-flash',
+    defaultValue: 'gemini-3.8-flash',
   );
 
   static String? get key => _key;

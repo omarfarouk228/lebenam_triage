@@ -63,36 +63,31 @@ class _SymptomCheckerWidgetState extends State<SymptomCheckerWidget> {
         children: [
           Row(
             children: [
-              IconBadge(
+              const IconBadge(
                 icon: Icons.checklist_rounded,
-                color: theme.colorScheme.primary,
+                color: AppColors.brand,
               ),
               const Gap(14),
               Expanded(child: Text(widget.title, style: textTheme.titleMedium)),
-              Text(
-                '${_selected.length}/$total',
-                style: textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
+              Text('${_selected.length}/$total', style: textTheme.labelMedium),
             ],
           ),
           if (widget.question != null) ...[
             const Gap(10),
-            Text(widget.question!, style: textTheme.bodyMedium),
+            Text(widget.question!, style: textTheme.bodySmall),
           ],
           const Gap(14),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(4),
             child: TweenAnimationBuilder<double>(
               tween: Tween(end: progress),
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
               builder: (context, value, _) => LinearProgressIndicator(
                 value: value,
-                minHeight: 6,
-                color: AppColors.accent,
-                backgroundColor: theme.colorScheme.surfaceContainer,
+                minHeight: 4,
+                color: AppColors.brand,
+                backgroundColor: theme.colorScheme.surfaceContainerHigh,
               ),
             ),
           ),
@@ -108,14 +103,12 @@ class _SymptomCheckerWidgetState extends State<SymptomCheckerWidget> {
                     : _selected.remove(symptom.id);
               }),
             ),
-          const Gap(12),
-          FilledButton.icon(
-            onPressed: _submitted ? null : _submit,
-            icon: Icon(
-              _submitted ? Icons.check_rounded : Icons.send_rounded,
-              size: 20,
-            ),
-            label: Text(_submitted ? 'Réponses envoyées' : widget.submitLabel),
+          const Gap(14),
+          SubmitButton(
+            label: widget.submitLabel,
+            doneLabel: 'Réponses envoyées',
+            done: _submitted,
+            onPressed: _submit,
           ),
         ],
       ),
@@ -139,53 +132,50 @@ class _SymptomTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected
-        ? AppColors.accent
-        : theme.colorScheme.outlineVariant;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Material(
         color: selected
-            ? AppColors.accent.withValues(alpha: 0.12)
-            : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: color),
-        ),
+            ? AppColors.brand.withValues(alpha: isDark ? 0.22 : 0.12)
+            : theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           onTap: enabled ? () => onChanged(!selected) : null,
           child: Semantics(
             checked: selected,
             label: label,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(label, style: theme.textTheme.bodyLarge),
                   ),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    transitionBuilder: (child, anim) =>
-                        ScaleTransition(scale: anim, child: child),
-                    child: Text(
-                      selected ? 'Oui' : 'Non',
-                      key: ValueKey(selected),
-                      style: theme.textTheme.labelLarge?.copyWith(
+                  const Gap(12),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? AppColors.brand : Colors.transparent,
+                      border: Border.all(
                         color: selected
-                            ? theme.colorScheme.primary
-                            : theme.textTheme.bodySmall?.color,
+                            ? AppColors.brand
+                            : theme.colorScheme.outline.withValues(alpha: 0.5),
+                        width: 1.5,
                       ),
                     ),
-                  ),
-                  const Gap(8),
-                  Icon(
-                    selected
-                        ? Icons.check_circle_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    color: selected ? AppColors.accent : color,
+                    child: selected
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          )
+                        : null,
                   ),
                 ],
               ),

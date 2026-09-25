@@ -8,8 +8,9 @@ import 'shared/triage_card.dart';
 /// Triage verdict: colour-coded urgency (green / orange / red), recommended
 /// action and estimated wait time.
 ///
-/// This is the card the audience must read from the back of the room, so it
-/// is deliberately loud: full-colour header and a pulsing icon when urgent.
+/// This is the card the audience must read from the back of the room: a
+/// solid status pill, a large title and a level meter. When urgent, the
+/// pill's dot pulses.
 class UrgencyCardWidget extends StatelessWidget {
   const UrgencyCardWidget({
     super.key,
@@ -28,16 +29,9 @@ class UrgencyCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
     final color = severity.color;
-    final isHigh = severity == Severity.high;
-
-    Widget headerIcon = Icon(severity.icon, color: Colors.white, size: 30);
-    if (isHigh) {
-      headerIcon = headerIcon
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scaleXY(end: 1.18, duration: 700.ms, curve: Curves.easeInOut);
-    }
 
     return Semantics(
       container: true,
@@ -45,84 +39,31 @@ class UrgencyCardWidget extends StatelessWidget {
       label: '${severity.label}. $title. $recommendation',
       child: TriageCard(
         tint: color,
-        borderColor: color.withValues(alpha: 0.6),
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Coloured header band
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(15),
-                ),
-              ),
-              child: Row(
-                children: [
-                  headerIcon,
-                  const Gap(14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          severity.label.toUpperCase(),
-                          style: textTheme.labelMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          title,
-                          style: textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _LevelDots(severity: severity),
-                ],
-              ),
+            Row(
+              children: [
+                _StatusPill(severity: severity),
+                const Spacer(),
+                _LevelMeter(severity: severity),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InfoRow(
-                    icon: Icons.local_hospital_rounded,
-                    color: color,
-                    label: 'Action recommandée',
-                    value: recommendation,
-                  ),
-                  if (waitTime != null) ...[
-                    const Gap(14),
-                    _InfoRow(
-                      icon: Icons.schedule_rounded,
-                      color: color,
-                      label: 'Délai de prise en charge',
-                      value: waitTime!,
-                    ),
-                  ],
-                  if (reason != null) ...[
-                    const Gap(14),
-                    Text(
-                      reason!,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: textTheme.bodySmall?.color?.withValues(
-                          alpha: 0.75,
-                        ),
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            const Gap(16),
+            Text(title, style: textTheme.headlineSmall),
+            const Gap(18),
+            Divider(color: color.withValues(alpha: 0.25)),
+            const Gap(16),
+            _InfoRow(label: 'Action recommandée', value: recommendation),
+            if (waitTime != null) ...[
+              const Gap(14),
+              _InfoRow(label: 'Délai de prise en charge', value: waitTime!),
+            ],
+            if (reason != null) ...[
+              const Gap(16),
+              Text(reason!, style: textTheme.bodySmall?.copyWith(height: 1.45)),
+            ],
           ],
         ),
       ),
@@ -130,9 +71,55 @@ class UrgencyCardWidget extends StatelessWidget {
   }
 }
 
-/// Three dots showing the level at a glance (1 = low … 3 = high).
-class _LevelDots extends StatelessWidget {
-  const _LevelDots({required this.severity});
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.severity});
+
+  final Severity severity;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget dot = Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
+    );
+    if (severity == Severity.high) {
+      dot = dot
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .fade(begin: 1, end: 0.25, duration: 600.ms);
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+      decoration: ShapeDecoration(
+        color: severity.color,
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          dot,
+          const Gap(8),
+          Text(
+            severity.label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Three bars showing the level at a glance (1 = low … 3 = high).
+class _LevelMeter extends StatelessWidget {
+  const _LevelMeter({required this.severity});
 
   final Severity severity;
 
@@ -144,59 +131,41 @@ class _LevelDots extends StatelessWidget {
       Severity.high => 3,
       Severity.info => 0,
     };
+    final off = Theme.of(context).colorScheme.outlineVariant;
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (i) {
-        return Container(
-          margin: const EdgeInsets.only(left: 4),
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: i < level ? 1 : 0.3),
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 0; i < 3; i++)
+          Container(
+            margin: const EdgeInsets.only(left: 3),
+            width: 5,
+            height: 8.0 + i * 5,
+            decoration: BoxDecoration(
+              color: i < level ? severity.color : off,
+              borderRadius: BorderRadius.circular(3),
+            ),
           ),
-        );
-      }),
+      ],
     );
   }
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.label, required this.value});
 
-  final IconData icon;
-  final Color color;
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IconBadge(icon: icon, color: color, size: 36),
-        const Gap(12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: textTheme.labelMedium),
-              const Gap(2),
-              Text(
-                value,
-                style: textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+        Text(label, style: textTheme.labelMedium),
+        const Gap(3),
+        Text(value, style: textTheme.titleMedium),
       ],
     );
   }

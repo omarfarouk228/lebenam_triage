@@ -40,7 +40,7 @@ class ActionButtonsWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(title ?? 'Prochaines étapes', style: textTheme.titleMedium),
-          const Gap(14),
+          const Gap(16),
           _PrimaryButton(action: primary, onTap: () => onAction(primary)),
           for (final action in secondary) ...[
             const Gap(10),
@@ -60,16 +60,17 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return FilledButton.icon(
       onPressed: onTap,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(0, 58),
-        backgroundColor: action.emergency ? AppColors.urgent : scheme.primary,
-        foregroundColor: action.emergency ? Colors.white : scheme.onPrimary,
-      ),
+      style: action.emergency
+          ? FilledButton.styleFrom(
+              backgroundColor: AppColors.urgent,
+              foregroundColor: Colors.white,
+            )
+          : null,
       icon: Icon(
         medicalIcon(action.icon, fallback: Icons.arrow_forward_rounded),
+        size: 20,
       ),
       label: Text(action.label),
     );
@@ -84,16 +85,17 @@ class _SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = action.emergency ? AppColors.urgent : scheme.primary;
     return OutlinedButton.icon(
       onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        side: BorderSide(color: color.withValues(alpha: 0.6)),
-      ),
+      style: action.emergency
+          ? OutlinedButton.styleFrom(
+              foregroundColor: AppColors.urgent,
+              side: BorderSide(color: AppColors.urgent.withValues(alpha: 0.5)),
+            )
+          : null,
       icon: Icon(
         medicalIcon(action.icon, fallback: Icons.chevron_right_rounded),
+        size: 20,
       ),
       label: Text(action.label),
     );

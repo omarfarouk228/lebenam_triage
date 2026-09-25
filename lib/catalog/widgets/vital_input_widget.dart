@@ -82,7 +82,7 @@ class _VitalInputWidgetState extends State<VitalInputWidget> {
             ),
             if (widget.note != null) ...[
               const Gap(10),
-              Text(widget.note!, style: textTheme.bodyMedium),
+              Text(widget.note!, style: textTheme.bodySmall),
             ],
             const Gap(18),
             _VitalField(
@@ -125,13 +125,11 @@ class _VitalInputWidgetState extends State<VitalInputWidget> {
               ),
             ],
             const Gap(20),
-            FilledButton.icon(
-              onPressed: _submitted ? null : _submit,
-              icon: Icon(
-                _submitted ? Icons.check_rounded : Icons.send_rounded,
-                size: 20,
-              ),
-              label: Text(_submitted ? 'Mesures envoyées' : widget.submitLabel),
+            SubmitButton(
+              label: widget.submitLabel,
+              doneLabel: 'Mesures envoyées',
+              done: _submitted,
+              onPressed: _submit,
             ),
           ],
         ),
@@ -174,8 +172,9 @@ class _VitalField extends StatelessWidget {
           RegExp(decimal ? r'[0-9.,]' : r'[0-9]'),
         ),
       ],
-      style: textTheme.headlineSmall,
+      style: textTheme.titleLarge,
       decoration: InputDecoration(
+        fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon),

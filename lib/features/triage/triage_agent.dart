@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// THE AGENT LOOP — how GenUI connects Gemini to Flutter.
+// THE AGENT LOOP: how GenUI connects Gemini to Flutter.
 //
-//   patient text / widget event
+//   patient text or voice / widget event
 //          │
 //          ▼
 //   Conversation ──► A2uiTransportAdapter.onSend ──► Gemini (streaming)
@@ -99,6 +99,17 @@ class TriageAgent {
     return conversation.sendRequest(ChatMessage.user(text.trim()));
   }
 
+  /// Sends a voice message: Gemini listens to the audio itself (no
+  /// speech-to-text step), so it also understands local languages.
+  Future<void> sendVoice(Uint8List wav) {
+    _repairs = 0;
+    return conversation.sendRequest(
+      ChatMessage.user('', parts: [DataPart(wav, mimeType: _wavMimeType)]),
+    );
+  }
+
+  static const _wavMimeType = 'audio/wav';
+
   SurfaceContext contextFor(String surfaceId) =>
       controller.contextFor(surfaceId);
 
@@ -142,13 +153,14 @@ class TriageAgent {
     }
     error.value = null;
 
-    final prompt = _toPrompt(message, surfaceId);
-    debugPrint('▶ Gemini [$surfaceId]\n$prompt');
+    final content = _toContent(message, surfaceId);
+    debugPrint(
+      '▶ Gemini [$surfaceId]\n'
+      '${content.parts.map((p) => p is gemini.TextPart ? p.text : '[audio]').join('\n')}',
+    );
 
     // Stream Gemini's answer straight into genui's parser.
-    await for (final chunk in _chat.sendMessageStream(
-      gemini.Content.text(prompt),
-    )) {
+    await for (final chunk in _chat.sendMessageStream(content)) {
       final text = chunk.text;
       if (text != null && text.isNotEmpty) _transport.addChunk(text);
     }
@@ -163,12 +175,17 @@ class TriageAgent {
     }
   }
 
-  /// Converts a genui [ChatMessage] into the text turn Gemini receives.
-  String _toPrompt(ChatMessage message, String surfaceId) {
+  /// Converts a genui [ChatMessage] into the turn Gemini receives: text
+  /// lines, plus the audio clip when the patient spoke.
+  gemini.Content _toContent(ChatMessage message, String surfaceId) {
     final lines = <String>[];
+    final audio = <gemini.Part>[];
     for (final part in message.parts) {
       if (part is TextPart && part.text.trim().isNotEmpty) {
         lines.add(patientTurn(part.text.trim(), surfaceId));
+      } else if (part is DataPart && part.mimeType == _wavMimeType) {
+        lines.add(voiceTurn(surfaceId));
+        audio.add(gemini.DataPart(part.mimeType, part.bytes));
       } else if (part is DataPart &&
           part.mimeType == UiPartConstants.interactionMimeType) {
         final payload = _decodeInteraction(part);
@@ -185,7 +202,7 @@ class TriageAgent {
         }
       }
     }
-    return lines.join('\n');
+    return gemini.Content.multi([gemini.TextPart(lines.join('\n')), ...audio]);
   }
 
   bool _isRenderError(ChatMessage message) => message.parts.any(

@@ -108,9 +108,9 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
           children: [
             Row(
               children: [
-                IconBadge(
+                const IconBadge(
                   icon: Icons.assignment_outlined,
-                  color: theme.colorScheme.primary,
+                  color: AppColors.brand,
                 ),
                 const Gap(14),
                 Expanded(
@@ -157,7 +157,7 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: _urgencyColor,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${_urgency.round()}',
@@ -185,13 +185,11 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
               onSelected: (v) => setState(() => _bodyPart = v),
             ),
             const Gap(20),
-            FilledButton.icon(
-              onPressed: _submitted ? null : _submit,
-              icon: Icon(
-                _submitted ? Icons.check_rounded : Icons.send_rounded,
-                size: 20,
-              ),
-              label: Text(_submitted ? 'Envoyé' : widget.submitLabel),
+            SubmitButton(
+              label: widget.submitLabel,
+              doneLabel: 'Envoyé',
+              done: _submitted,
+              onPressed: _submit,
             ),
           ],
         ),
@@ -208,7 +206,7 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
-    child: Text(text, style: Theme.of(context).textTheme.labelLarge),
+    child: Text(text, style: Theme.of(context).textTheme.labelMedium),
   );
 }
 
@@ -233,7 +231,6 @@ class _ChoiceWrap extends StatelessWidget {
           ChoiceChip(
             label: Text(option),
             selected: option == selected,
-            selectedColor: AppColors.accent.withValues(alpha: 0.25),
             onSelected: (_) => onSelected(option),
           ),
       ],

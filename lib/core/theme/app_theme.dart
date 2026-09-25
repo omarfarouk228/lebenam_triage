@@ -1,143 +1,216 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// Material 3 theme: Poppins for headings, Inter for body, 16px radii.
+/// Material 3 theme following the Lébénam brand: cream and navy surfaces,
+/// Newsreader (serif) headings, Hanken Grotesk text, pill buttons in
+/// Lébénam blue, orange focus. No shadows: cards are separated by hairlines.
 abstract final class AppTheme {
-  static const radius = 16.0;
+  static const radius = 20.0;
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
-  /// Soft shadow shared by every card of the app and of the catalog.
-  static List<BoxShadow> cardShadow(Brightness brightness) => [
-    BoxShadow(
-      color: brightness == Brightness.dark
-          ? Colors.black.withValues(alpha: 0.35)
-          : AppColors.primary.withValues(alpha: 0.08),
-      blurRadius: 24,
-      offset: const Offset(0, 8),
-    ),
-  ];
+  /// Transparent status and navigation bars with icons matching the theme.
+  static SystemUiOverlayStyle systemBars(bool isDark) =>
+      (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          .copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false,
+          );
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final ink = isDark ? AppColors.darkInk : AppColors.ink;
-    final cardColor = isDark ? AppColors.darkCard : AppColors.card;
+    final background = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
+    final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final surfaceHigh = isDark
+        ? AppColors.darkSurfaceHigh
+        : AppColors.lightSurfaceHigh;
+    final hairline = isDark ? AppColors.darkHairline : AppColors.lightHairline;
+    final ink = isDark ? AppColors.darkInk : AppColors.lightInk;
+    final muted = isDark ? AppColors.darkInkMuted : AppColors.lightInkMuted;
 
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
+          seedColor: AppColors.brand,
           brightness: brightness,
         ).copyWith(
-          // In dark mode the deep teal has no contrast, so the cyan leads.
-          primary: isDark ? AppColors.accent : AppColors.primary,
-          onPrimary: isDark ? AppColors.primary : Colors.white,
-          secondary: AppColors.accent,
-          onSecondary: AppColors.primary,
+          primary: AppColors.brand,
+          onPrimary: AppColors.cream,
+          secondary: AppColors.brand,
+          onSecondary: Colors.white,
           error: AppColors.urgent,
-          surface: isDark ? AppColors.darkBackground : AppColors.background,
+          surface: background,
           onSurface: ink,
-          surfaceContainerLowest: cardColor,
-          surfaceContainerLow: cardColor,
-          surfaceContainer: isDark
-              ? const Color(0xFF123030)
-              : const Color(0xFFEFF9F8),
+          onSurfaceVariant: muted,
+          surfaceContainerLowest: background,
+          surfaceContainerLow: surface,
+          surfaceContainer: surface,
+          surfaceContainerHigh: surfaceHigh,
+          surfaceContainerHighest: surfaceHigh,
+          outline: muted,
+          outlineVariant: hairline,
         );
 
-    final base = ThemeData(useMaterial3: true, colorScheme: scheme);
-    final body = GoogleFonts.interTextTheme(base.textTheme);
-    TextStyle? heading(TextStyle? s, FontWeight w) =>
-        GoogleFonts.poppins(textStyle: s, fontWeight: w);
+    final base = ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: scheme,
+      splashFactory: InkSparkle.splashFactory,
+    );
+    final sans = GoogleFonts.hankenGroteskTextTheme(base.textTheme);
+    // Headings: Newsreader, medium weight, tight tracking (as on the site).
+    TextStyle? serif(TextStyle? s, double spacing) => GoogleFonts.newsreader(
+      textStyle: s,
+      fontWeight: FontWeight.w500,
+      letterSpacing: spacing,
+      height: 1.08,
+    );
+    TextStyle? tight(TextStyle? s, FontWeight w, double spacing) =>
+        s?.copyWith(fontWeight: w, letterSpacing: spacing);
 
-    final textTheme = body
+    final textTheme = sans
         .copyWith(
-          displayLarge: heading(body.displayLarge, FontWeight.w700),
-          displayMedium: heading(body.displayMedium, FontWeight.w700),
-          displaySmall: heading(body.displaySmall, FontWeight.w700),
-          headlineLarge: heading(body.headlineLarge, FontWeight.w700),
-          headlineMedium: heading(body.headlineMedium, FontWeight.w600),
-          headlineSmall: heading(body.headlineSmall, FontWeight.w600),
-          titleLarge: heading(body.titleLarge, FontWeight.w600),
-          titleMedium: heading(body.titleMedium, FontWeight.w600),
-          titleSmall: heading(body.titleSmall, FontWeight.w600),
+          displayLarge: serif(sans.displayLarge, -1.5),
+          displayMedium: serif(sans.displayMedium, -1.2),
+          displaySmall: serif(sans.displaySmall, -1),
+          headlineLarge: serif(sans.headlineLarge, -0.8),
+          headlineMedium: serif(sans.headlineMedium, -0.6),
+          headlineSmall: serif(sans.headlineSmall, -0.4),
+          titleLarge: tight(sans.titleLarge, FontWeight.w600, -0.3),
+          titleMedium: tight(sans.titleMedium, FontWeight.w600, -0.2),
+          titleSmall: tight(sans.titleSmall, FontWeight.w600, -0.1),
+          labelLarge: tight(sans.labelLarge, FontWeight.w600, 0),
+          bodyLarge: sans.bodyLarge?.copyWith(height: 1.45),
+          bodyMedium: sans.bodyMedium?.copyWith(height: 1.45),
+          bodySmall: sans.bodySmall?.copyWith(color: muted),
+          labelMedium: sans.labelMedium?.copyWith(color: muted),
+          labelSmall: sans.labelSmall?.copyWith(color: muted),
         )
         .apply(bodyColor: ink, displayColor: ink);
 
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radius),
+    const pill = StadiumBorder();
+    final buttonText = GoogleFonts.hankenGrotesk(
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+      letterSpacing: -0.1,
+    );
+    final fieldBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
     );
 
     return base.copyWith(
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: background,
       textTheme: textTheme,
+      dividerTheme: DividerThemeData(color: hairline, space: 1, thickness: 1),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: background,
         surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         centerTitle: false,
         foregroundColor: ink,
-        titleTextStyle: textTheme.titleLarge,
+        systemOverlayStyle: systemBars(isDark),
+        titleTextStyle: textTheme.titleMedium?.copyWith(fontSize: 17),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: ink),
       ),
       cardTheme: CardThemeData(
-        color: cardColor,
+        color: surface,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: shape,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 52),
-          shape: shape,
-          textStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
+          shape: pill,
+          elevation: 0,
+          textStyle: buttonText,
+          disabledBackgroundColor: surfaceHigh,
+          disabledForegroundColor: muted,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 52),
-          shape: shape,
-          textStyle: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
+          shape: pill,
+          foregroundColor: ink,
+          side: BorderSide(color: hairline),
+          textStyle: buttonText,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: ink,
+          textStyle: buttonText,
         ),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: scheme.outlineVariant),
-        backgroundColor: cardColor,
-        labelStyle: textTheme.labelLarge,
+        shape: pill,
+        side: BorderSide.none,
+        backgroundColor: surfaceHigh,
+        selectedColor: AppColors.brand.withValues(alpha: isDark ? 0.28 : 0.16),
+        showCheckmark: false,
+        labelStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cardColor,
+        fillColor: surface,
+        hintStyle: textTheme.bodyLarge?.copyWith(color: muted),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 16,
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+        border: fieldBorder,
+        enabledBorder: fieldBorder,
+        disabledBorder: fieldBorder,
+        focusedBorder: fieldBorder.copyWith(
+          borderSide: const BorderSide(
+            color: AppColors.brandOrange,
+            width: 1.5,
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+        errorBorder: fieldBorder.copyWith(
+          borderSide: const BorderSide(color: AppColors.urgent),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: const BorderSide(color: AppColors.accent, width: 2),
+        focusedErrorBorder: fieldBorder.copyWith(
+          borderSide: const BorderSide(color: AppColors.urgent, width: 1.5),
         ),
       ),
-      sliderTheme: const SliderThemeData(
+      sliderTheme: SliderThemeData(
         showValueIndicator: ShowValueIndicator.onDrag,
+        trackHeight: 4,
+        inactiveTrackColor: surfaceHigh,
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: isDark ? AppColors.darkSurfaceHigh : AppColors.lightBackground,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: hairline),
+        ),
+        textStyle: textTheme.bodyMedium,
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.brand,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: shape,
+        backgroundColor: ink,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(color: background),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

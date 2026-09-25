@@ -3,7 +3,6 @@
 // LLM. If an example stops matching a CatalogItem schema, this test fails:
 // the prompt and the catalog can never silently drift apart.
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
@@ -90,7 +89,7 @@ void main() {
     expect(examples, hasLength(4));
   });
 
-  testWidgets('Ex. 1 — fever: InfoCard + SymptomChecker', (tester) async {
+  testWidgets('Ex. 1: fever: InfoCard + SymptomChecker', (tester) async {
     final h = _Harness();
     addTearDown(h.dispose);
     await _render(tester, h, examples[0]);
@@ -113,7 +112,7 @@ void main() {
     expect(payload, contains('Des courbatures'));
   });
 
-  testWidgets('Ex. 2 — moderate verdict + actions', (tester) async {
+  testWidgets('Ex. 2: moderate verdict + actions', (tester) async {
     final h = _Harness();
     addTearDown(h.dispose);
     await _render(tester, h, examples[1]);
@@ -128,7 +127,7 @@ void main() {
     expect(_payloads(h), contains('go_to_clinic'));
   });
 
-  testWidgets('Ex. 3 — vague headache: pre-filled TriageForm', (tester) async {
+  testWidgets('Ex. 3: vague headache: pre-filled TriageForm', (tester) async {
     final h = _Harness();
     addTearDown(h.dispose);
     await _render(tester, h, examples[2]);
@@ -138,7 +137,7 @@ void main() {
     expect(find.text('Mal de tête'), findsOneWidget);
   });
 
-  testWidgets('Ex. 4 — chest pain: red card + emergency call', (tester) async {
+  testWidgets('Ex. 4: chest pain: red card + emergency call', (tester) async {
     final h = _Harness();
     addTearDown(h.dispose);
     await _render(tester, h, examples[3]);

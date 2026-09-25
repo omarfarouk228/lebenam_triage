@@ -1,8 +1,8 @@
 # Lébénam Triage
 
-> **The End of Static Screens** — application de démo du talk *Building Agentive Flutter Apps with the GenUI SDK*, DevFest Afrique 2026.
+> **The End of Static Screens** : application de démo du talk *Building Agentive Flutter Apps with the GenUI SDK*, DevFest Afrique 2026.
 
-Un assistant de triage médical pour les cliniques à faible connectivité en Afrique de l'Ouest. Le patient décrit ses symptômes en langage naturel, et **Gemini compose l'interface Flutter à la volée** à partir d'un catalogue de widgets. Aucun écran de triage n'est codé en dur et il n'y a pas de pile de navigation : chaque réponse de l'agent est une nouvelle interface.
+Un assistant de triage médical pour les cliniques à faible connectivité en Afrique de l'Ouest. Le patient décrit ses symptômes par écrit ou **à voix haute** (Gemini écoute l'audio directement, y compris en langue locale), et **Gemini compose l'interface Flutter à la volée** à partir d'un catalogue de widgets. Aucun écran de triage n'est codé en dur et il n'y a pas de pile de navigation : chaque réponse de l'agent est une nouvelle interface.
 
 ⚠️ Démonstration technique : ne remplace pas un avis médical.
 
@@ -16,7 +16,9 @@ Un assistant de triage médical pour les cliniques à faible connectivité en Af
 | [`genui_catalog`](https://pub.dev/packages/genui_catalog) `^0.4.0` | CatalogItems prêts à l'emploi (ici `Column` comme layout racine) |
 | [`google_generative_ai`](https://pub.dev/packages/google_generative_ai) | Appel à Gemini en streaming |
 | `json_schema_builder` | Schémas JSON des CatalogItems |
-| `google_fonts`, `flutter_animate`, `gap`, `flutter_svg` | Design et animations |
+| `record` | Message vocal : micro en PCM 16 kHz mono, envoyé à Gemini en WAV |
+| `google_fonts`, `flutter_animate`, `gap`, `flutter_svg` | Design (charte Lébénam : Newsreader, Hanken Grotesk, Rochester), logo animé |
+| `flutter_launcher_icons`, `flutter_native_splash` *(dev)* | Icône de l'app et écran de lancement natif |
 
 > `genui_google_generative_ai` est **discontinué** et bloqué à genui 0.7. L'app branche donc Gemini elle-même via `A2uiTransportAdapter` (voir [`triage_agent.dart`](lib/features/triage/triage_agent.dart)). Ça tient en une trentaine de lignes.
 
@@ -26,12 +28,15 @@ Un assistant de triage médical pour les cliniques à faible connectivité en Af
 
 ```bash
 flutter pub get
-flutter run --dart-define=GEMINI_API_KEY=votre_clé
+cp .env.example.json .env.json   # puis collez votre clé dans .env.json
+flutter run --dart-define-from-file=.env.json
 ```
 
 - Clé gratuite : <https://aistudio.google.com/apikey>
-- Sans `--dart-define`, l'app affiche un écran pour coller la clé, qui est ensuite enregistrée sur l'appareil. Pratique sur scène. Menu ⋮ → *Changer la clé API* pour la remplacer.
-- Changer de modèle : `--dart-define=GEMINI_MODEL=gemini-2.5-flash-lite` (plus rapide, JSON un peu moins fiable). Le modèle par défaut est `gemini-2.5-flash`.
+- Micro : l'autorisation est demandée au premier appui (Android, iOS et macOS sont configurés).
+- `.env.json` est ignoré par git : la clé ne part jamais sur GitHub. Sans fichier, `flutter run --dart-define=GEMINI_API_KEY=votre_clé` marche aussi.
+- Sans clé au lancement, l'app affiche un écran pour coller la clé, qui est ensuite enregistrée sur l'appareil. Pratique sur scène. Menu ⋮ → *Changer la clé API* pour la remplacer.
+- Changer de modèle : `GEMINI_MODEL` dans `.env.json` (ex. `gemini-3.5-flash-lite`). Le modèle par défaut est `gemini-3.8-flash`.
 
 ```bash
 flutter test      # rejoue les exemples du prompt dans le vrai pipeline genui, sans LLM
@@ -46,18 +51,21 @@ flutter analyze
 
 ```
 lib/
-  main.dart                      charge la clé puis runApp
-  app.dart                       MaterialApp, thèmes clair/sombre
+  main.dart                      charge la clé et le thème puis runApp
+  app.dart                       MaterialApp, thèmes clair/sombre/système
   core/
-    config/api_key_store.dart    --dart-define ou clé saisie
+    brand/                       logo Lébénam (tracés SVG, version animée)
+    config/api_key_store.dart    .env.json / --dart-define ou clé saisie
     constants/prompts.dart       system prompt + exemples few-shot
-    theme/                       couleurs, Poppins/Inter, radius 16
+    theme/                       charte Lébénam (crème, marine, bleu, orange), choix du thème
   features/
-    home/home_screen.dart        splash + CTA
+    splash/splash_screen.dart    le logo se dessine, puis l'accueil
+    home/home_screen.dart        accroche + CTA
     setup/api_key_screen.dart    saisie de la clé (fallback)
     triage/
-      triage_agent.dart          ★ la boucle agent GenUI ↔ Gemini
-      triage_screen.dart         30 % saisie / 70 % Surface GenUI
+      triage_agent.dart          ★ la boucle agent GenUI ↔ Gemini (texte + audio)
+      triage_screen.dart         Surface GenUI + barre de saisie en bas
+      voice/                     enregistrement micro → WAV
       widgets/                   barre de saisie, chargement, état vide
   catalog/
     catalog_items.dart           ★ le contrat LLM ↔ Flutter (6 CatalogItems)
@@ -99,13 +107,13 @@ Chaque tour reçoit un `surfaceId` unique (`triage-1`, `triage-2`…). L'écran 
 
 | Composant | Rôle | Événement renvoyé à l'agent |
 |---|---|---|
-| `InfoCard` | Empathie, conseil. Toujours en premier | — |
+| `InfoCard` | Empathie, conseil. Toujours en premier | Aucun |
 | `SymptomChecker` | Checklist oui/non + progression | `symptoms_confirmed` `{confirmed, denied}` |
 | `TriageForm` | Intensité 1–5, durée, zone du corps, symptômes (pré-remplis) | `triage_submitted` |
 | `VitalInput` | Température, fréquence cardiaque | `vitals_submitted` |
-| `UrgencyCard` | Verdict vert / orange / rouge, action, délai | — |
+| `UrgencyCard` | Verdict vert / orange / rouge, action, délai | Aucun |
 | `ActionButtons` | Prochaines étapes, appel d'urgence en rouge | `action_selected` `{actionId, label}` |
-| `Column` *(genui_catalog)* | Layout racine | — |
+| `Column` *(genui_catalog)* | Layout racine | Aucun |
 
 ### Ajouter un composant
 
@@ -152,22 +160,27 @@ final triageCatalog = Catalog([columnItem, timelineCardItem, ...], catalogId: '.
 
 ## Déroulé de la démo (sur scène)
 
-Menu ⋮ → **scénarios de démo** : ils pré-remplissent le champ, et il ne reste qu'à appuyer sur Envoyer.
+Les **exemples** de l'écran vide (ou le menu ⋯) pré-remplissent le champ : il ne reste qu'à appuyer sur Envoyer.
 
 1. « J'ai de la fièvre et des maux de tête depuis 3 jours » → animation de réflexion.
 2. L'agent compose **InfoCard** (empathie) + **SymptomChecker**.
 3. Cocher 2 symptômes → *Valider*.
 4. Nouvelle interface : **UrgencyCard orange** (suspicion de paludisme, test rapide) + **ActionButtons**.
-5. « Regardez ce qui se passe avec une douleur thoracique » → ↻ *Nouvelle consultation*, puis scénario *Douleur thoracique*.
+5. « Regardez ce qui se passe avec une douleur thoracique » → ✎ *Nouvelle consultation*, puis scénario *Douleur thoracique*.
 6. Interface totalement différente : **UrgencyCard rouge** qui pulse + bouton **Appeler les urgences**.
 
 Le 3ᵉ scénario (« J'ai mal à la tête », volontairement vague) montre le **TriageForm** pré-rempli.
 
+**Bonus micro** : appuyez sur le micro et décrivez vos symptômes à voix haute (en français ou en éwé, mina...). Aucune transcription locale : Gemini écoute l'audio, et l'InfoCard reformule ce qu'il a compris.
+
+L'icône en haut à droite bascule entre les thèmes **clair**, **sombre** et **système**.
+
 ### Conseils pour le live
 
 - Faites tourner les 3 scénarios juste avant de monter sur scène : une première requête « froide » est plus lente.
-- Comptez 3 à 8 s par tour avec `gemini-2.5-flash`. L'animation de chargement occupe ce temps.
+- Comptez quelques secondes par tour avec `gemini-3.8-flash`. L'animation de chargement occupe ce temps.
 - Les polices viennent de Google Fonts au runtime. Hors-ligne, [embarquez-les dans les assets](https://pub.dev/packages/google_fonts#bundling-fonts-when-releasing).
+- Testez le micro dans la salle : parlez près du téléphone. Si le son est trop faible, l'agent demande de répéter.
 - Enregistrez une vidéo de secours de la démo.
 
 ---
