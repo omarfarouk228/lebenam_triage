@@ -85,9 +85,38 @@ String _errors(_Harness h) =>
 void main() {
   final examples = _examples();
 
-  test('the prompt contains the 4 documented examples', () {
-    expect(examples, hasLength(4));
+  test('the prompt contains the 12 documented examples', () {
+    expect(examples, hasLength(12));
   });
+
+  // Every example must pass genui's schema validation and render, including
+  // the genui_catalog components it uses.
+  for (final (i, texts) in [
+    ['Secours appelés', 'Secours en route', 'Asseyez-vous', 'Desserrez'],
+    ['À faire dès maintenant', 'Buvez souvent', 'Se protéger du paludisme'],
+    ['Température', '39,2 °C', 'Fièvre depuis'],
+    ['Votre fiche', 'Prénom', 'Créer ma fiche'],
+    ['Afi', '34 ans · Urgence modérée', 'Vos symptômes', 'Votre consultation'],
+    ["Âge de l'enfant"],
+    ['Température (°C)'],
+    ['Je suis là pour votre santé'],
+  ].indexed) {
+    final n = i + 5;
+    testWidgets('Ex. $n renders with genui_catalog components', (tester) async {
+      final h = _Harness();
+      addTearDown(h.dispose);
+      await _render(tester, h, examples[n - 1]);
+
+      expect(_errors(h), isEmpty);
+      for (final text in texts) {
+        expect(
+          find.textContaining(text, findRichText: true),
+          findsWidgets,
+          reason: 'Ex. $n: "$text" not rendered',
+        );
+      }
+    });
+  }
 
   testWidgets('Ex. 1: fever: InfoCard + SymptomChecker', (tester) async {
     final h = _Harness();
@@ -144,7 +173,20 @@ void main() {
 
     expect(_errors(h), isEmpty);
     expect(find.text('URGENCE ÉLEVÉE'), findsOneWidget);
-    expect(find.text('Appeler les urgences'), findsOneWidget);
+
+    // Call actions show the app-owned number, never one from the LLM.
+    final call = find.textContaining(
+      'Appeler les urgences  ·  118',
+      findRichText: true,
+    );
+    expect(call, findsOneWidget);
+
+    // Tapping opens the dialer (no plugin in tests: handled) and still
+    // reports the action to the agent.
+    await tester.ensureVisible(call);
+    await tester.tap(call);
+    await tester.pump();
+    expect(_payloads(h), contains('call_emergency'));
   });
 
   testWidgets('an unknown component is reported back to the agent', (

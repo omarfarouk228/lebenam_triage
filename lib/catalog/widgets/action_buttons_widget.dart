@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/phone/dialer.dart';
 import 'shared/severity.dart';
 import 'shared/triage_card.dart';
 
@@ -11,12 +12,16 @@ typedef TriageAction = ({
   String label,
   String? icon,
   bool emergency,
+
+  /// When set, tapping opens the phone dialer on that number.
+  CallTarget? call,
 });
 
 /// Next steps: one primary action and a few secondary ones.
 ///
 /// An action flagged `emergency` is rendered in red whatever its position,
-/// so "Appeler les urgences" can never look like a harmless option.
+/// so "Appeler les urgences" can never look like a harmless option. A call
+/// action is reported to the agent and opens the phone dialer.
 class ActionButtonsWidget extends StatelessWidget {
   const ActionButtonsWidget({
     super.key,
@@ -31,6 +36,13 @@ class ActionButtonsWidget extends StatelessWidget {
   final List<TriageAction> secondary;
   final ValueChanged<TriageAction> onAction;
 
+  /// Reports the action first, so the agent composes "what to do while
+  /// waiting" during the call, then opens the dialer.
+  Future<void> _tap(BuildContext context, TriageAction action) async {
+    onAction(action);
+    if (action.call case final target?) await dial(context, target);
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -41,10 +53,13 @@ class ActionButtonsWidget extends StatelessWidget {
         children: [
           Text(title ?? 'Prochaines étapes', style: textTheme.titleMedium),
           const Gap(16),
-          _PrimaryButton(action: primary, onTap: () => onAction(primary)),
+          _PrimaryButton(action: primary, onTap: () => _tap(context, primary)),
           for (final action in secondary) ...[
             const Gap(10),
-            _SecondaryButton(action: action, onTap: () => onAction(action)),
+            _SecondaryButton(
+              action: action,
+              onTap: () => _tap(context, action),
+            ),
           ],
         ],
       ),
@@ -72,7 +87,7 @@ class _PrimaryButton extends StatelessWidget {
         medicalIcon(action.icon, fallback: Icons.arrow_forward_rounded),
         size: 20,
       ),
-      label: Text(action.label),
+      label: _Label(action: action),
     );
   }
 }
@@ -97,7 +112,31 @@ class _SecondaryButton extends StatelessWidget {
         medicalIcon(action.icon, fallback: Icons.chevron_right_rounded),
         size: 20,
       ),
-      label: Text(action.label),
+      label: _Label(action: action),
+    );
+  }
+}
+
+/// Button label, followed by the number for a call action ("· 118").
+class _Label extends StatelessWidget {
+  const _Label({required this.action});
+
+  final TriageAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final number = action.call?.number;
+    if (number == null) return Text(action.label);
+    return Text.rich(
+      TextSpan(
+        text: action.label,
+        children: [
+          TextSpan(
+            text: '  ·  $number',
+            style: const TextStyle(fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
     );
   }
 }

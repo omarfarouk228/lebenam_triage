@@ -129,7 +129,8 @@ class TriageAgent {
 
   /// Turns are serialised: a widget event or a repair request arriving while
   /// Gemini is still streaming waits for the current turn to finish.
-  Future<void> _enqueue(ChatMessage message) {
+  Future<void> _enqueue(ChatMessage message) async {
+    if (_isLocalOnly(message)) return;
     if (_isRenderError(message)) _repairQueued = true;
     _inFlight++;
     isThinking.value = true;
@@ -139,6 +140,16 @@ class TriageAgent {
     _queue = run.catchError((_) {});
     return run;
   }
+
+  /// Widget-internal events (e.g. StepperCard navigation) stay on device.
+  bool _isLocalOnly(ChatMessage message) => message.parts.any(
+    (p) =>
+        p is DataPart &&
+        p.mimeType == UiPartConstants.interactionMimeType &&
+        localOnlyEvents.contains(
+          (_decodeInteraction(p)['action'] as Map?)?['name'],
+        ),
+  );
 
   Future<void> _runTurn(ChatMessage message) async {
     final surfaceId = 'triage-${++_turn}';

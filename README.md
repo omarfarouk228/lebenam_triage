@@ -13,7 +13,7 @@ Un assistant de triage médical pour les cliniques à faible connectivité en Af
 | Package | Rôle |
 |---|---|
 | [`genui`](https://pub.dev/packages/genui) `^0.10.3` | SDK GenUI : `SurfaceController`, `Conversation`, `Surface`, protocole A2UI |
-| [`genui_catalog`](https://pub.dev/packages/genui_catalog) `^0.4.0` | CatalogItems prêts à l'emploi (ici `Column` comme layout racine) |
+| [`genui_catalog`](https://pub.dev/packages/genui_catalog) `^0.4.0` | 16 CatalogItems prêts à l'emploi, combinés aux composants de triage |
 | [`google_generative_ai`](https://pub.dev/packages/google_generative_ai) | Appel à Gemini en streaming |
 | `json_schema_builder` | Schémas JSON des CatalogItems |
 | `record` | Message vocal : micro en PCM 16 kHz mono, envoyé à Gemini en WAV |
@@ -68,7 +68,7 @@ lib/
       voice/                     enregistrement micro → WAV
       widgets/                   barre de saisie, chargement, état vide
   catalog/
-    catalog_items.dart           ★ le contrat LLM ↔ Flutter (6 CatalogItems)
+    catalog_items.dart           ★ le contrat LLM ↔ Flutter (6 items maison + 16 genui_catalog)
     widgets/                     widgets Flutter purs, sans dépendance à GenUI
 ```
 
@@ -113,7 +113,6 @@ Chaque tour reçoit un `surfaceId` unique (`triage-1`, `triage-2`…). L'écran 
 | `VitalInput` | Température, fréquence cardiaque | `vitals_submitted` |
 | `UrgencyCard` | Verdict vert / orange / rouge, action, délai | Aucun |
 | `ActionButtons` | Prochaines étapes, appel d'urgence en rouge | `action_selected` `{actionId, label}` |
-| `Column` *(genui_catalog)* | Layout racine | Aucun |
 
 ### Ajouter un composant
 
@@ -148,14 +147,34 @@ Chaque tour reçoit un `surfaceId` unique (`triage-1`, `triage-2`…). L'écran 
 3. **L'enregistrer** dans la liste `triageCatalog`.
 4. **Le décrire** dans `prompts.dart` (quand l'utiliser), avec idéalement un exemple. Le test le validera automatiquement.
 
-Pour les composants génériques (KPI, tableaux, graphiques, timelines, formulaires…), il suffit de piocher dans [genui_catalog](https://pub.dev/packages/genui_catalog), qui propose 17 composants avec schéma, événements, dark mode et accessibilité :
+L'agent combine ces 6 composants métier avec **16 composants de [genui_catalog](https://pub.dev/packages/genui_catalog)**, dans la même interface :
+
+| Composant genui_catalog | Usage dans Lébénam |
+|---|---|
+| `Column`, `Row` | Mise en page (racine, badges côte à côte) |
+| `StepperCard` | Étape en cours de la prise en charge (appel, secours en route...) |
+| `ListCard`, `MediaCard` | Gestes et conseils, fiche de prévention |
+| `StatusBadge` | « Secours appelés », « Ne restez pas seul » |
+| `KpiCard`, `StatRow` | Température mise en avant, résumé des réponses |
+| `ChartCard` | Évolution de la fièvre sur plusieurs jours |
+| `DataTable`, `TimelineCard`, `ProfileCard` | Fiche de triage à montrer à l'accueil |
+| `ActionForm` | Prénom, âge, téléphone pour préparer la venue |
+| `SelectInput` | Âge d'un enfant (la fièvre avant 3 mois est une alarme) |
+| `RatingInput` | « Cette aide vous a-t-elle été utile ? » |
+| `EmptyState` | Demande sans rapport avec la santé |
 
 ```dart
-import 'package:genui_catalog/genui_catalog.dart';
+import 'package:genui_catalog/genui_catalog.dart' as kit;
 
-final triageCatalog = Catalog([columnItem, timelineCardItem, ...], catalogId: '...');
+final triageCatalog = Catalog([
+  infoCardItem, urgencyCardItem, /* ... */
+  kit.columnItem, kit.stepperCardItem, kit.listCardItem, /* ... */
+], catalogId: 'lebenam_triage');
 ```
 
+Écartés volontairement : `CheckboxGroup` et `SwitchGroup` (un événement, donc un appel au LLM, à chaque case) et `SearchBar` (un par frappe). Les boutons Précédent / Suivant du `StepperCard` restent locaux : ils ne relancent pas l'agent.
+
+Le prompt contient 12 exemples, et `flutter test` les fait tous passer dans le vrai pipeline genui, composants genui_catalog compris.
 ---
 
 ## Déroulé de la démo (sur scène)

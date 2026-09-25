@@ -18,9 +18,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:genui/genui.dart';
-import 'package:genui_catalog/genui_catalog.dart' show columnItem;
+import 'package:genui_catalog/genui_catalog.dart' as kit;
 import 'package:json_schema_builder/json_schema_builder.dart';
 
+import '../core/phone/dialer.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/info_card_widget.dart';
 import 'widgets/shared/severity.dart';
@@ -45,17 +46,62 @@ abstract final class TriageEvents {
 
 /// The full catalog handed to the `SurfaceController`.
 ///
-/// It mixes our 6 healthcare items with `Column` from genui_catalog, which
-/// the agent uses as the root layout to stack cards.
+/// It mixes our 6 healthcare items with 16 ready-made items from
+/// [genui_catalog](https://pub.dev/packages/genui_catalog): the agent
+/// composes both in the same interface. Left out on purpose: CheckboxGroup
+/// and SwitchGroup (one event, so one LLM round trip, per toggle) and
+/// SearchBar (one per keystroke).
 final triageCatalog = Catalog([
-  columnItem,
+  // Healthcare items, built for this app.
   infoCardItem,
   urgencyCardItem,
   symptomCheckerItem,
   triageFormItem,
   actionButtonsItem,
   vitalInputItem,
+  // genui_catalog: layout.
+  kit.columnItem,
+  kit.rowItem,
+  // genui_catalog: data display.
+  _animated(kit.kpiCardItem),
+  _animated(kit.statRowItem),
+  _animated(kit.chartCardItem),
+  _animated(kit.dataTableItem),
+  _animated(kit.listCardItem),
+  _animated(kit.emptyStateItem),
+  // genui_catalog: workflow.
+  _animated(kit.stepperCardItem),
+  _animated(kit.timelineCardItem),
+  _animated(kit.statusBadgeItem, stretch: false),
+  // genui_catalog: forms.
+  _animated(kit.actionFormItem),
+  _animated(kit.selectInputItem),
+  _animated(kit.ratingInputItem),
+  // genui_catalog: media.
+  _animated(kit.profileCardItem),
+  _animated(kit.mediaCardItem),
 ], catalogId: triageCatalogId);
+
+/// Events handled inside the widget, never sent to the agent: stepping
+/// through a StepperCard must not recompose the whole screen.
+const localOnlyEvents = {
+  kit.CatalogEvents.stepNext,
+  kit.CatalogEvents.stepPrev,
+};
+
+/// Same genui_catalog item, with our staggered entrance animation. Cards
+/// are stretched to the full width, like ours (some hug their content).
+CatalogItem _animated(CatalogItem item, {bool stretch = true}) => CatalogItem(
+  name: item.name,
+  dataSchema: item.dataSchema,
+  widgetBuilder: (ctx) {
+    final child = item.widgetBuilder(ctx);
+    return _entrance(
+      ctx,
+      stretch ? SizedBox(width: double.infinity, child: child) : child,
+    );
+  },
+);
 
 // ─── 1. InfoCard ─────────────────────────────────────────────────────────────
 
@@ -234,6 +280,13 @@ final _actionSchema = S.object(
     'label': S.string(),
     'icon': _iconSchema,
     'emergency': S.boolean(description: 'true → rendered in red.'),
+    'call': S.string(
+      description:
+          'Set when tapping must open the phone dialer: "emergency" '
+          '(emergency services) or "clinic" (nurse / clinic). The app '
+          'owns the numbers.',
+      enumValues: ['emergency', 'clinic'],
+    ),
   },
   required: ['id', 'label'],
 );
@@ -271,12 +324,22 @@ final actionButtonsItem = CatalogItem(
   },
 );
 
-TriageAction _action(Map<dynamic, dynamic> a) => (
-  id: '${a['id'] ?? 'action'}',
-  label: '${a['label'] ?? ''}',
-  icon: a['icon'] as String?,
-  emergency: a['emergency'] == true,
-);
+TriageAction _action(Map<dynamic, dynamic> a) {
+  final id = '${a['id'] ?? 'action'}';
+  final emergency = a['emergency'] == true;
+  return (
+    id: id,
+    label: '${a['label'] ?? ''}',
+    icon: a['icon'] as String?,
+    emergency: emergency,
+    // Lenient: a "call_*" action without `call` still dials.
+    call:
+        CallTarget.parse(a['call']) ??
+        (id.startsWith('call')
+            ? (emergency ? CallTarget.emergency : CallTarget.clinic)
+            : null),
+  );
+}
 
 // ─── 6. VitalInput ───────────────────────────────────────────────────────────
 

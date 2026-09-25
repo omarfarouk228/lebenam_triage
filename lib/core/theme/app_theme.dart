@@ -122,12 +122,17 @@ abstract final class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(foregroundColor: ink),
       ),
+      // Also styles genui_catalog cards: their hard-coded elevation casts no
+      // shadow, and they get the same hairline border as our TriageCard.
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
+          side: BorderSide(color: hairline),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -172,8 +177,12 @@ abstract final class AppTheme {
           horizontal: 18,
           vertical: 16,
         ),
+        // Hairline so fields stay visible on a card of the same colour
+        // (genui_catalog forms).
         border: fieldBorder,
-        enabledBorder: fieldBorder,
+        enabledBorder: fieldBorder.copyWith(
+          borderSide: BorderSide(color: hairline),
+        ),
         disabledBorder: fieldBorder,
         focusedBorder: fieldBorder.copyWith(
           borderSide: const BorderSide(
