@@ -4,9 +4,9 @@
 // A CatalogItem has three parts:
 //   1. name        → the word the LLM writes in `"component": "UrgencyCard"`
 //   2. dataSchema  → JSON Schema of the props the LLM is allowed to send.
-//                    genui validates every generated component against it:
-//                    a strict schema is the best guardrail against
-//                    hallucinated props.
+//                    genui validates every generated component against it
+//                    (bounds, enums, required). Unknown props slip through
+//                    the schema: `strictProps` rejects them in Dart.
 //   3. widgetBuilder → turns validated JSON into a real Flutter widget and
 //                    wires user interactions back to the agent through
 //                    `dispatchEvent`.
@@ -22,6 +22,7 @@ import 'package:genui_catalog/genui_catalog.dart' as kit;
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 import '../core/phone/dialer.dart';
+import 'strict_props.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/info_card_widget.dart';
 import 'widgets/shared/severity.dart';
@@ -52,39 +53,42 @@ abstract final class TriageEvents {
 /// composes both in the same interface. Only SearchBar is left out (one
 /// event, so one LLM round trip, per keystroke). CheckboxGroup and
 /// SwitchGroup are used with `submitLabel`: one event per answer, not per
-/// toggle.
-final triageCatalog = Catalog([
-  // Healthcare items, built for this app.
-  infoCardItem,
-  urgencyCardItem,
-  symptomCheckerItem,
-  triageFormItem,
-  actionButtonsItem,
-  vitalInputItem,
-  // genui_catalog: layout.
-  kit.columnItem,
-  kit.rowItem,
-  // genui_catalog: data display.
-  _animated(kit.kpiCardItem),
-  _animated(kit.statRowItem),
-  _animated(kit.chartCardItem),
-  _animated(kit.dataTableItem),
-  _animated(kit.listCardItem),
-  _animated(kit.emptyStateItem),
-  // genui_catalog: workflow.
-  _animated(kit.stepperCardItem),
-  _animated(kit.timelineCardItem),
-  _animated(kit.statusBadgeItem, stretch: false),
-  // genui_catalog: forms.
-  _animated(kit.actionFormItem),
-  _animated(kit.selectInputItem, card: true),
-  _animated(kit.checkboxGroupItem, card: true),
-  _animated(kit.switchGroupItem, card: true),
-  _animated(kit.ratingInputItem),
-  // genui_catalog: media.
-  _animated(kit.profileCardItem),
-  _animated(kit.mediaCardItem),
-], catalogId: triageCatalogId);
+/// toggle. Every item goes through the [strictProps] guard.
+final triageCatalog = Catalog(
+  [
+    // Healthcare items, built for this app.
+    infoCardItem,
+    urgencyCardItem,
+    symptomCheckerItem,
+    triageFormItem,
+    actionButtonsItem,
+    vitalInputItem,
+    // genui_catalog: layout.
+    kit.columnItem,
+    kit.rowItem,
+    // genui_catalog: data display.
+    _animated(kit.kpiCardItem),
+    _animated(kit.statRowItem),
+    _animated(kit.chartCardItem),
+    _animated(kit.dataTableItem),
+    _animated(kit.listCardItem),
+    _animated(kit.emptyStateItem),
+    // genui_catalog: workflow.
+    _animated(kit.stepperCardItem),
+    _animated(kit.timelineCardItem),
+    _animated(kit.statusBadgeItem, stretch: false),
+    // genui_catalog: forms.
+    _animated(kit.actionFormItem),
+    _animated(kit.selectInputItem, card: true),
+    _animated(kit.checkboxGroupItem, card: true),
+    _animated(kit.switchGroupItem, card: true),
+    _animated(kit.ratingInputItem),
+    // genui_catalog: media.
+    _animated(kit.profileCardItem),
+    _animated(kit.mediaCardItem),
+  ].map(strictProps).toList(),
+  catalogId: triageCatalogId,
+);
 
 /// Events handled inside the widget, never sent to the agent: stepping
 /// through a StepperCard must not recompose the whole screen.
@@ -124,6 +128,8 @@ final infoCardItem = CatalogItem(
       'severity': _severitySchema,
     },
     required: ['title', 'body'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
   ),
   widgetBuilder: (ctx) {
     final data = _json(ctx);
@@ -156,6 +162,8 @@ final urgencyCardItem = CatalogItem(
       'reason': S.string(description: 'Why this level, one sentence.'),
     },
     required: ['level', 'title', 'recommendation'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
   ),
   widgetBuilder: (ctx) {
     final data = _json(ctx);
@@ -194,6 +202,8 @@ final symptomCheckerItem = CatalogItem(
       'submitLabel': S.string(),
     },
     required: ['title', 'symptoms'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
   ),
   widgetBuilder: (ctx) {
     final data = _json(ctx);
@@ -245,6 +255,8 @@ final triageFormItem = CatalogItem(
       'submitLabel': S.string(),
     },
     required: ['title'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
   ),
   widgetBuilder: (ctx) {
     final data = _json(ctx);
@@ -311,6 +323,8 @@ final actionButtonsItem = CatalogItem(
       'secondary': S.list(items: _actionSchema, maxItems: 3),
     },
     required: ['primary'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
   ),
   widgetBuilder: (ctx) {
     final data = _json(ctx);
@@ -364,6 +378,8 @@ final vitalInputItem = CatalogItem(
       'submitLabel': S.string(),
     },
     required: ['title'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
   ),
   widgetBuilder: (ctx) {
     final data = _json(ctx);

@@ -86,6 +86,11 @@ class TriageAgent {
   /// Last error, cleared when a new turn starts.
   final error = ValueNotifier<Object?>(null);
 
+  /// Interfaces refused before reaching the patient (genui schema validation
+  /// or the Dart guard), as reported back to the agent.
+  Stream<String> get renderErrors => _renderErrors.stream;
+  final _renderErrors = StreamController<String>.broadcast();
+
   static const _maxRepairs = 2;
   int _turn = 0;
   int _inFlight = 0;
@@ -97,6 +102,16 @@ class TriageAgent {
   Future<void> send(String text) {
     _repairs = 0;
     return conversation.sendRequest(ChatMessage.user(text.trim()));
+  }
+
+  /// Live demo only: plays a prepared A2UI answer as if Gemini had written
+  /// it, to show a hallucination on stage without relying on the model.
+  /// `{{surfaceId}}` is replaced with the next surface id.
+  void injectForDemo(String a2uiBlocks) {
+    _repairs = 0;
+    error.value = null;
+    final surfaceId = 'triage-${++_turn}';
+    _transport.addChunk(a2uiBlocks.replaceAll('{{surfaceId}}', surfaceId));
   }
 
   /// Sends a voice message: Gemini listens to the audio itself (no
@@ -131,7 +146,10 @@ class TriageAgent {
   /// Gemini is still streaming waits for the current turn to finish.
   Future<void> _enqueue(ChatMessage message) async {
     if (_isLocalOnly(message)) return;
-    if (_isRenderError(message)) _repairQueued = true;
+    if (_isRenderError(message)) {
+      _repairQueued = true;
+      _renderErrors.add(_errorMessage(message));
+    }
     _inFlight++;
     isThinking.value = true;
     final run = _queue.then((_) => _runTurn(message)).whenComplete(() {
@@ -223,6 +241,12 @@ class TriageAgent {
         _decodeInteraction(p)['error'] != null,
   );
 
+  String _errorMessage(ChatMessage message) => [
+    for (final p in message.parts)
+      if (p is DataPart && p.mimeType == UiPartConstants.interactionMimeType)
+        if (_decodeInteraction(p)['error'] case {'message': final m}) '$m',
+  ].join('\n');
+
   Map<String, Object?> _decodeInteraction(DataPart part) {
     try {
       final json = jsonDecode(UiInteractionPart.fromDataPart(part).interaction);
@@ -235,6 +259,7 @@ class TriageAgent {
   void dispose() {
     _surfaceSub.cancel();
     _eventsSub.cancel();
+    _renderErrors.close();
     conversation.dispose();
     _transport.dispose();
     controller.dispose();

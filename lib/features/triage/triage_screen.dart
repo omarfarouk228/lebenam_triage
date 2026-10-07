@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import '../../core/brand/lebenam_logo.dart';
 import '../../core/config/api_key_store.dart';
 import '../../core/theme/theme_controller.dart';
 import '../setup/api_key_screen.dart';
+import 'demo/guard_demo_sheet.dart';
 import 'triage_agent.dart';
 import 'widgets/empty_surface.dart';
 import 'widgets/loading_surface.dart';
@@ -30,6 +32,7 @@ class TriageScreen extends StatefulWidget {
 class _TriageScreenState extends State<TriageScreen> {
   final _input = TextEditingController();
   late TriageAgent _agent;
+  StreamSubscription<String>? _renderErrorsSub;
 
   /// What the patient last said, shown above the agent's answer.
   String? _lastSaid;
@@ -50,11 +53,50 @@ class _TriageScreenState extends State<TriageScreen> {
     _agent = _createAgent();
   }
 
-  TriageAgent _createAgent() =>
-      TriageAgent(apiKey: ApiKeyStore.key!, model: ApiKeyStore.model);
+  TriageAgent _createAgent() {
+    final agent = TriageAgent(
+      apiKey: ApiKeyStore.key!,
+      model: ApiKeyStore.model,
+    );
+    _renderErrorsSub?.cancel();
+    _renderErrorsSub = agent.renderErrors.listen(_showRenderError);
+    return agent;
+  }
+
+  /// Makes visible what is normally silent: an interface refused before
+  /// reaching the patient, and sent back to the agent to recompose.
+  void _showRenderError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 8),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "🛡 Interface refusée, renvoyée à l'agent",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Gap(4),
+              Text(message, maxLines: 4, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      );
+  }
+
+  void _openGuardDemo() => showGuardDemoSheet(
+    context,
+    onInject: (scenario) => _agent.injectForDemo(scenario.a2ui),
+  );
 
   @override
   void dispose() {
+    _renderErrorsSub?.cancel();
     _agent.dispose();
     _input.dispose();
     super.dispose();
@@ -120,12 +162,19 @@ class _TriageScreenState extends State<TriageScreen> {
           PopupMenuButton<String>(
             tooltip: 'Plus',
             icon: const Icon(Icons.more_horiz_rounded),
-            onSelected: (value) =>
-                value == '__key' ? _changeKey() : _fill(value),
+            onSelected: (value) => switch (value) {
+              '__key' => _changeKey(),
+              '__guard' => _openGuardDemo(),
+              _ => _fill(value),
+            },
             itemBuilder: (_) => [
               for (final text in _demoScripts)
                 PopupMenuItem(value: text, child: Text(text, maxLines: 2)),
               const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: '__guard',
+                child: Text('Démo : garde Dart'),
+              ),
               const PopupMenuItem(
                 value: '__key',
                 child: Text('Changer la clé API'),
