@@ -33,7 +33,6 @@ dependencies:
 
   genui: ^0.10.3
   genui_catalog: ^0.5.0
-  google_generative_ai: ^0.4.7
   json_schema_builder: ^0.1.7
   google_fonts: ^8.2.1
   flutter_animate: ^4.5.2
@@ -42,6 +41,9 @@ dependencies:
   record: ^6.2.1
   flutter_svg: ^2.3.0
   url_launcher: ^6.3.2
+  firebase_core: ^4.15.0
+  firebase_ai: ^4.0.0
+  firebase_app_check: ^0.4.8
 
 dev_dependencies:
   flutter_test:

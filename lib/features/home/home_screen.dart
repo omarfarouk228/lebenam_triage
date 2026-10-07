@@ -3,11 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../core/config/api_key_store.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/brand/lebenam_logo.dart';
 import '../../core/theme/theme_controller.dart';
-import '../setup/api_key_screen.dart';
 import '../triage/triage_screen.dart';
 
 /// Home: brand, one headline and a single call to action.
@@ -18,8 +16,7 @@ class HomeScreen extends StatelessWidget {
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 400),
-        pageBuilder: (_, _, _) =>
-            ApiKeyStore.hasKey ? const TriageScreen() : const ApiKeyScreen(),
+        pageBuilder: (_, _, _) => const TriageScreen(),
         transitionsBuilder: (_, animation, _, child) => FadeTransition(
           opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
           child: child,

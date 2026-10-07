@@ -21,7 +21,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
-import 'package:google_generative_ai/google_generative_ai.dart' as gemini;
+import 'package:firebase_ai/firebase_ai.dart' as gemini;
 
 import '../../catalog/catalog_items.dart';
 import '../../core/constants/prompts.dart';
@@ -37,7 +37,7 @@ class TriageAgentException implements Exception {
 }
 
 class TriageAgent {
-  TriageAgent({required String apiKey, required String model}) {
+  TriageAgent({required String model}) {
     // 1. The controller owns the surfaces and knows our catalog.
     controller = SurfaceController(catalogs: [triageCatalog]);
 
@@ -62,12 +62,14 @@ class TriageAgent {
       systemPromptFragments: [triageSystemPrompt],
     );
 
-    _chat = gemini.GenerativeModel(
-      model: model,
-      apiKey: apiKey,
-      systemInstruction: gemini.Content.system(prompt.systemPromptJoined()),
-      generationConfig: gemini.GenerationConfig(temperature: 0.3),
-    ).startChat();
+    // No API key in the app: Firebase AI Logic holds it server-side.
+    _chat = gemini.FirebaseAI.googleAI()
+        .generativeModel(
+          model: model,
+          systemInstruction: gemini.Content.system(prompt.systemPromptJoined()),
+          generationConfig: gemini.GenerationConfig(temperature: 0.3),
+        )
+        .startChat();
   }
 
   late final SurfaceController controller;
@@ -214,7 +216,7 @@ class TriageAgent {
         lines.add(patientTurn(part.text.trim(), surfaceId));
       } else if (part is DataPart && part.mimeType == _wavMimeType) {
         lines.add(voiceTurn(surfaceId));
-        audio.add(gemini.DataPart(part.mimeType, part.bytes));
+        audio.add(gemini.InlineDataPart(part.mimeType, part.bytes));
       } else if (part is DataPart &&
           part.mimeType == UiPartConstants.interactionMimeType) {
         final payload = _decodeInteraction(part);

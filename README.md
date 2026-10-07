@@ -26,16 +26,18 @@ Un assistant de triage médical pour les cliniques à faible connectivité en Af
 
 ## Lancer l'app
 
+Aucune clé Gemini dans l'app : les requêtes passent par **Firebase AI Logic** (la clé reste côté serveur) et **App Check** prouve qu'elles viennent de l'app.
+
 ```bash
 flutter pub get
-cp .env.example.json .env.json   # puis collez votre clé dans .env.json
+cp .env.example.json .env.json   # numéros de téléphone, modèle
 flutter run --dart-define-from-file=.env.json
 ```
 
-- Clé gratuite : <https://aistudio.google.com/apikey>
+- Firebase : projet `lebenamtriage`, configuré avec `flutterfire configure --project=lebenamtriage`. Dans la console, activez **Firebase AI Logic** (Gemini Developer API).
+- App Check : en debug, l'app utilise `APP_CHECK_DEBUG_TOKEN` de `.env.json` (un UUID). Enregistrez-le dans Firebase → App Check → *Apps* → ⋮ → *Gérer les jetons de débogage*, pour chaque app (Android, Apple). Le web n'active pas App Check (il faudrait une clé reCAPTCHA).
+- macOS : App Check a besoin du partage de trousseau, donc d'une app signée avec une équipe Apple. Non configuré ici : la démo tourne sur Android.
 - Micro : l'autorisation est demandée au premier appui (Android, iOS et macOS sont configurés).
-- `.env.json` est ignoré par git : la clé ne part jamais sur GitHub. Sans fichier, `flutter run --dart-define=GEMINI_API_KEY=votre_clé` marche aussi.
-- Sans clé au lancement, l'app affiche un écran pour coller la clé, qui est ensuite enregistrée sur l'appareil. Pratique sur scène. Menu ⋮ → *Changer la clé API* pour la remplacer.
 - Changer de modèle : `GEMINI_MODEL` dans `.env.json` (ex. `gemini-3.5-flash-lite`). Le modèle par défaut est `gemini-3.8-flash`.
 
 ```bash
@@ -43,25 +45,22 @@ flutter test      # rejoue les exemples du prompt dans le vrai pipeline genui, s
 flutter analyze
 ```
 
-> **Production** : ne mettez jamais de clé dans une app publiée. Passez par **Firebase AI Logic** (clé côté serveur + App Check).
-
 ---
 
 ## Architecture
 
 ```
 lib/
-  main.dart                      charge la clé et le thème puis runApp
+  main.dart                      Firebase + App Check, thème, puis runApp
   app.dart                       MaterialApp, thèmes clair/sombre/système
   core/
     brand/                       logo Lébénam (tracés SVG, version animée)
-    config/api_key_store.dart    .env.json / --dart-define ou clé saisie
+    config/gemini_config.dart    modèle Gemini (aucune clé)
     constants/prompts.dart       system prompt + exemples few-shot
     theme/                       charte Lébénam (crème, marine, bleu, orange), choix du thème
   features/
     splash/splash_screen.dart    le logo se dessine, puis l'accueil
     home/home_screen.dart        accroche + CTA
-    setup/api_key_screen.dart    saisie de la clé (fallback)
     triage/
       triage_agent.dart          ★ la boucle agent GenUI ↔ Gemini (texte + audio)
       triage_screen.dart         Surface GenUI + barre de saisie en bas

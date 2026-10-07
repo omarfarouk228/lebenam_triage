@@ -4,12 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:genui/genui.dart';
-import 'package:google_generative_ai/google_generative_ai.dart' as gemini;
+import 'package:firebase_ai/firebase_ai.dart' as gemini;
 
 import '../../core/brand/lebenam_logo.dart';
-import '../../core/config/api_key_store.dart';
+import '../../core/config/gemini_config.dart';
 import '../../core/theme/theme_controller.dart';
-import '../setup/api_key_screen.dart';
 import 'demo/guard_demo_sheet.dart';
 import 'triage_agent.dart';
 import 'widgets/empty_surface.dart';
@@ -54,10 +53,7 @@ class _TriageScreenState extends State<TriageScreen> {
   }
 
   TriageAgent _createAgent() {
-    final agent = TriageAgent(
-      apiKey: ApiKeyStore.key!,
-      model: ApiKeyStore.model,
-    );
+    final agent = TriageAgent(model: GeminiConfig.model);
     _renderErrorsSub?.cancel();
     _renderErrorsSub = agent.renderErrors.listen(_showRenderError);
     return agent;
@@ -138,13 +134,6 @@ class _TriageScreenState extends State<TriageScreen> {
     });
   }
 
-  Future<void> _changeKey() async {
-    final changed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const ApiKeyScreen(popOnSave: true)),
-    );
-    if (changed == true) _newConsultation();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -163,7 +152,6 @@ class _TriageScreenState extends State<TriageScreen> {
             tooltip: 'Plus',
             icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (value) => switch (value) {
-              '__key' => _changeKey(),
               '__guard' => _openGuardDemo(),
               _ => _fill(value),
             },
@@ -174,10 +162,6 @@ class _TriageScreenState extends State<TriageScreen> {
               const PopupMenuItem(
                 value: '__guard',
                 child: Text('Démo : garde Dart'),
-              ),
-              const PopupMenuItem(
-                value: '__key',
-                child: Text('Changer la clé API'),
               ),
             ],
           ),
@@ -204,7 +188,6 @@ class _TriageScreenState extends State<TriageScreen> {
                         suggestions: _demoScripts,
                         onSuggestion: _fill,
                         onRetry: _retry,
-                        onChangeKey: _changeKey,
                       ),
                     ),
                     // ── The patient's composer ─────────────────────────────
@@ -245,7 +228,6 @@ class _SurfaceArea extends StatelessWidget {
     required this.suggestions,
     required this.onSuggestion,
     required this.onRetry,
-    required this.onChangeKey,
   });
 
   final TriageAgent agent;
@@ -253,7 +235,6 @@ class _SurfaceArea extends StatelessWidget {
   final List<String> suggestions;
   final ValueChanged<String> onSuggestion;
   final VoidCallback? onRetry;
-  final VoidCallback onChangeKey;
 
   @override
   Widget build(BuildContext context) {
@@ -275,7 +256,6 @@ class _SurfaceArea extends StatelessWidget {
             key: const ValueKey('error'),
             error: error,
             onRetry: onRetry,
-            onChangeKey: onChangeKey,
           );
         } else if (surfaceId != null) {
           child = SingleChildScrollView(
@@ -355,30 +335,19 @@ class _PatientBubble extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({
-    super.key,
-    required this.error,
-    required this.onRetry,
-    required this.onChangeKey,
-  });
+  const _ErrorView({super.key, required this.error, required this.onRetry});
 
   final Object error;
   final VoidCallback? onRetry;
-  final VoidCallback onChangeKey;
-
-  bool get _isKeyError => error is gemini.InvalidApiKey;
 
   String get _message => switch (error) {
-    gemini.InvalidApiKey() => 'La clé API Gemini est invalide.',
     gemini.UnsupportedUserLocation() =>
       "L'API Gemini n'est pas disponible depuis cette région.",
-    gemini.GenerativeAIException(:final message)
-        when message.contains('credits') ||
-            message.contains('quota') ||
-            message.contains('RESOURCE_EXHAUSTED') =>
-      'Les crédits ou le quota Gemini de ce projet sont épuisés. '
-          'Rechargez-les dans AI Studio, puis réessayez.',
-    gemini.GenerativeAIException(:final message) => message,
+    gemini.ServiceApiNotEnabled() =>
+      "Firebase AI Logic n'est pas activé sur ce projet Firebase.",
+    gemini.QuotaExceeded() =>
+      'Le quota Gemini de ce projet est épuisé. Réessayez plus tard.',
+    gemini.FirebaseAIException(:final message) => message,
     TriageAgentException(:final message) => message,
     _ => 'Connexion impossible. Vérifiez le réseau et réessayez.',
   };
@@ -419,12 +388,7 @@ class _ErrorView extends StatelessWidget {
               ),
             ),
             const Gap(24),
-            if (_isKeyError)
-              FilledButton(
-                onPressed: onChangeKey,
-                child: const Text('Changer la clé API'),
-              )
-            else if (onRetry != null)
+            if (onRetry != null)
               FilledButton(onPressed: onRetry, child: const Text('Réessayer')),
           ],
         ),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1072784320367",
+    "project_id": "lebenamtriage",
+    "storage_bucket": "lebenamtriage.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1072784320367:android:cd22aa9f2da0d28c516a9a",
+        "android_client_info": {
+          "package_name": "com.kofcorporation.lebenam_triage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCm1rmeCs8NF71k92R-68pezBmDmsL1rXU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
