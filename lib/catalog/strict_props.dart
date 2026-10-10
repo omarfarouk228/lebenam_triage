@@ -16,11 +16,19 @@
 // own validation errors) and the component is not rendered.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
 
 /// Turns the guard on and off at runtime (live demo only; on by default).
 final strictPropsEnabled = ValueNotifier<bool>(true);
+
+/// Live demo only: with the guard off, reports each component rendered
+/// despite invented props (normally silent), as "Type: [props]".
+Stream<String> get strictPropsBypassed => _bypassed.stream;
+final _bypassed = StreamController<String>.broadcast();
+final _reportedBypasses = <String>{};
 
 /// Same [item], but a component carrying props absent from its schema is
 /// rejected instead of rendered.
@@ -34,12 +42,19 @@ CatalogItem strictProps(CatalogItem item) {
     dataSchema: item.dataSchema,
     isImplicitlyFlexible: item.isImplicitlyFlexible,
     widgetBuilder: (ctx) {
-      if (!strictPropsEnabled.value) return item.widgetBuilder(ctx);
       final unknown = [
         for (final key in (ctx.data as Map).keys)
           if (!allowed.contains('$key')) '$key',
       ];
       if (unknown.isEmpty) return item.widgetBuilder(ctx);
+      if (!strictPropsEnabled.value) {
+        // Builders run on every rebuild: report each component once.
+        if (_reportedBypasses.add('${ctx.surfaceId}/${ctx.id}')) {
+          debugPrint('⚠ Dart guard off: ${ctx.type} rendered with $unknown');
+          _bypassed.add('${ctx.type}: $unknown');
+        }
+        return item.widgetBuilder(ctx);
+      }
       return _Rejected(ctx: ctx, unknown: unknown, allowed: allowed);
     },
   );

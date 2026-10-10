@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -30,6 +32,14 @@ Future<void> main() async {
       providerApple: kDebugMode
           ? const AppleDebugProvider(debugToken: _appCheckDebugToken)
           : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+    );
+    // Warm the token cache: firebase_ai fetches a token before every
+    // request and fails the request if that fetch fails.
+    unawaited(
+      FirebaseAppCheck.instance.getToken().then<void>(
+        (_) {},
+        onError: (Object e) => debugPrint('App Check warm-up failed: $e'),
+      ),
     );
   }
   await ThemeController.instance.load();

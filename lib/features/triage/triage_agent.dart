@@ -52,7 +52,10 @@ class TriageAgent {
 
     _surfaceSub = controller.surfaceUpdates.listen(_onSurfaceUpdate);
     _eventsSub = conversation.events.listen((event) {
-      if (event is ConversationError) error.value = event.error;
+      if (event is ConversationError) {
+        debugPrint('✖ Gemini error: ${event.error.runtimeType}: ${event.error}');
+        error.value = event.error;
+      }
     });
 
     // 4. PromptBuilder merges our domain prompt with the A2UI protocol rules
@@ -190,10 +193,24 @@ class TriageAgent {
       '${content.parts.map((p) => p is gemini.TextPart ? p.text : '[audio]').join('\n')}',
     );
 
-    // Stream Gemini's answer straight into genui's parser.
-    await for (final chunk in _chat.sendMessageStream(content)) {
-      final text = chunk.text;
-      if (text != null && text.isNotEmpty) _transport.addChunk(text);
+    // Stream Gemini's answer straight into genui's parser. A failure before
+    // the first chunk (network blip, App Check token fetch) is retried once.
+    for (var attempt = 1; ; attempt++) {
+      var received = false;
+      try {
+        await for (final chunk in _chat.sendMessageStream(content)) {
+          final text = chunk.text;
+          if (text != null && text.isNotEmpty) {
+            received = true;
+            _transport.addChunk(text);
+          }
+        }
+        break;
+      } catch (e) {
+        if (received || attempt > 1) rethrow;
+        debugPrint('↻ Gemini retry after: $e');
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
     }
 
     // Let the parser → controller → listeners pipeline flush its microtasks.

@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:genui/genui.dart';
 import 'package:firebase_ai/firebase_ai.dart' as gemini;
 
+import '../../catalog/strict_props.dart';
 import '../../core/brand/lebenam_logo.dart';
 import '../../core/config/gemini_config.dart';
 import '../../core/theme/theme_controller.dart';
@@ -32,6 +33,7 @@ class _TriageScreenState extends State<TriageScreen> {
   final _input = TextEditingController();
   late TriageAgent _agent;
   StreamSubscription<String>? _renderErrorsSub;
+  late final StreamSubscription<String> _bypassSub;
 
   /// What the patient last said, shown above the agent's answer.
   String? _lastSaid;
@@ -50,6 +52,7 @@ class _TriageScreenState extends State<TriageScreen> {
   void initState() {
     super.initState();
     _agent = _createAgent();
+    _bypassSub = strictPropsBypassed.listen(_showBypass);
   }
 
   TriageAgent _createAgent() {
@@ -61,7 +64,17 @@ class _TriageScreenState extends State<TriageScreen> {
 
   /// Makes visible what is normally silent: an interface refused before
   /// reaching the patient, and sent back to the agent to recompose.
-  void _showRenderError(String message) {
+  void _showRenderError(String message) =>
+      _showDemoNotice("🛡 Interface refusée, renvoyée à l'agent", message);
+
+  /// Guard off: the invented props reached the widget and nobody noticed.
+  void _showBypass(String message) => _showDemoNotice(
+    '⚠ Garde désactivée : propriété inventée acceptée',
+    '$message, affiché sans erreur.',
+    color: Colors.orange.shade900,
+  );
+
+  void _showDemoNotice(String title, String message, {Color? color}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -69,14 +82,12 @@ class _TriageScreenState extends State<TriageScreen> {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 8),
+          backgroundColor: color,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "🛡 Interface refusée, renvoyée à l'agent",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
               const Gap(4),
               Text(message, maxLines: 4, overflow: TextOverflow.ellipsis),
             ],
@@ -93,6 +104,7 @@ class _TriageScreenState extends State<TriageScreen> {
   @override
   void dispose() {
     _renderErrorsSub?.cancel();
+    _bypassSub.cancel();
     _agent.dispose();
     _input.dispose();
     super.dispose();
