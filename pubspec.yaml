@@ -44,6 +44,8 @@ dependencies:
   firebase_core: ^4.15.0
   firebase_ai: ^4.0.0
   firebase_app_check: ^0.4.8
+  flutter_edge_ai: ^2.6.0
+  flutter_edge_ai_litertlm: ^1.20.0
 
 dev_dependencies:
   flutter_test:

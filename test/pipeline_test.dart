@@ -8,11 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
 import 'package:lebenam_triage/catalog/catalog_items.dart';
 import 'package:lebenam_triage/core/constants/prompts.dart';
+import 'package:lebenam_triage/features/triage/offline/offline_triage.dart';
 
 /// Splits the prompt into its examples (each = the ```json blocks under a
-/// "## Exemple" heading).
+/// "## Example" heading).
 List<String> _examples() {
-  final parts = triageSystemPrompt.split('## Exemple').skip(1);
+  final parts = triageSystemPrompt.split('## Example').skip(1);
   return [
     for (final part in parts)
       RegExp(
@@ -85,29 +86,30 @@ String _errors(_Harness h) =>
 void main() {
   final examples = _examples();
 
-  test('the prompt contains the 13 documented examples', () {
-    expect(examples, hasLength(13));
+  test('the prompt contains the 14 documented examples', () {
+    expect(examples, hasLength(14));
   });
 
   // Every example must pass genui's schema validation and render, including
   // the genui_catalog components it uses.
   for (final (i, texts) in [
-    ['Secours appelés', 'Secours en route', 'Asseyez-vous', 'Desserrez'],
-    ['À faire dès maintenant', 'Buvez souvent', 'Se protéger du paludisme'],
-    ['Température', '39,2 °C', 'Fièvre depuis'],
-    ['Votre fiche', 'Prénom', 'Créer ma fiche'],
-    ['Vos antécédents', 'Drépanocytose', 'Valider'],
+    ['Help called', 'Help on the way', 'Sit down', 'Loosen'],
+    ['Do this now', 'Drink often', 'Protect yourself from malaria'],
+    ['Temperature', '39.2 °C', 'Fever for'],
+    ['Your sheet', 'First name', 'Create my sheet'],
+    ['Your medical history', 'Sickle cell disease', 'Confirm'],
     [
       'Afi',
-      '34 ans · Urgence modérée',
-      'Vos symptômes',
-      'Votre consultation',
-      'Rappel par SMS',
-      'Enregistrer',
+      '34 years old · Moderate urgency',
+      'Your symptoms',
+      'Your consultation',
+      'SMS reminder',
+      'Save',
     ],
-    ["Âge de l'enfant"],
-    ['Température (°C)'],
-    ['Je suis là pour votre santé'],
+    ["Child's age"],
+    ['Temperature (°C)'],
+    ['Tap a picture', 'Where does it hurt?', 'Chest', 'My child'],
+    ['I am here for your health'],
   ].indexed) {
     final n = i + 5;
     testWidgets('Ex. $n renders with genui_catalog components', (tester) async {
@@ -132,21 +134,21 @@ void main() {
     await _render(tester, h, examples[0]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('Je suis là pour vous aider'), findsOneWidget);
-    expect(find.text('Des frissons ou sueurs'), findsOneWidget);
+    expect(find.text('I am here to help you'), findsOneWidget);
+    expect(find.text('Chills or sweating'), findsOneWidget);
 
-    // Tapping two symptoms then "Valider" sends ONE event back to the agent.
-    await tester.tap(find.text('Des frissons ou sueurs'));
-    await tester.tap(find.text('Des courbatures'));
+    // Tapping two symptoms then "Send my answers" sends ONE event back to the agent.
+    await tester.tap(find.text('Chills or sweating'));
+    await tester.tap(find.text('Body aches'));
     await tester.pump();
-    await tester.ensureVisible(find.text('Valider mes réponses'));
-    await tester.tap(find.text('Valider mes réponses'));
+    await tester.ensureVisible(find.text('Send my answers'));
+    await tester.tap(find.text('Send my answers'));
     await tester.pump();
 
     expect(h.submitted, hasLength(1));
     final payload = _payloads(h);
     expect(payload, contains(TriageEvents.symptomsConfirmed));
-    expect(payload, contains('Des courbatures'));
+    expect(payload, contains('Body aches'));
   });
 
   testWidgets('Ex. 2: moderate verdict + actions', (tester) async {
@@ -155,11 +157,11 @@ void main() {
     await _render(tester, h, examples[1]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('URGENCE MODÉRÉE'), findsOneWidget);
-    expect(find.text('Aller à la clinique'), findsOneWidget);
+    expect(find.text('MODERATE URGENCY'), findsOneWidget);
+    expect(find.text('Go to the clinic'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Aller à la clinique'));
-    await tester.tap(find.text('Aller à la clinique'));
+    await tester.ensureVisible(find.text('Go to the clinic'));
+    await tester.tap(find.text('Go to the clinic'));
     await tester.pump();
     expect(_payloads(h), contains('go_to_clinic'));
   });
@@ -170,8 +172,8 @@ void main() {
     await _render(tester, h, examples[2]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('Parlez-moi de votre douleur'), findsOneWidget);
-    expect(find.text('Mal de tête'), findsOneWidget);
+    expect(find.text('Tell me about your pain'), findsOneWidget);
+    expect(find.text('Headache'), findsOneWidget);
   });
 
   testWidgets('Ex. 4: chest pain: red card + emergency call', (tester) async {
@@ -180,11 +182,11 @@ void main() {
     await _render(tester, h, examples[3]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('URGENCE ÉLEVÉE'), findsOneWidget);
+    expect(find.text('HIGH URGENCY'), findsOneWidget);
 
     // Call actions show the app-owned number, never one from the LLM.
     final call = find.textContaining(
-      'Appeler les urgences  ·  118',
+      'Call emergency services  ·  118',
       findRichText: true,
     );
     expect(call, findsOneWidget);
@@ -213,20 +215,20 @@ void main() {
     expect(_errors(h), contains('HeartRateChart'));
   });
 
-  testWidgets('CheckboxGroup sends the history once, on "Valider"', (
+  testWidgets('CheckboxGroup sends the history once, on "Confirm"', (
     tester,
   ) async {
     final h = _Harness();
     addTearDown(h.dispose);
     await _render(tester, h, examples[8]);
 
-    await tester.tap(find.text('Enceinte'));
-    await tester.tap(find.text('Diabète'));
+    await tester.tap(find.text('Pregnant'));
+    await tester.tap(find.text('Diabetes'));
     await tester.pump();
     expect(h.submitted, isEmpty, reason: 'checking a box stays local');
 
-    await tester.ensureVisible(find.text('Valider'));
-    await tester.tap(find.text('Valider'));
+    await tester.ensureVisible(find.text('Confirm'));
+    await tester.tap(find.text('Confirm'));
     await tester.pump();
     expect(h.submitted, hasLength(1));
     expect(_payloads(h), contains('medical_history:pregnancy,diabetes'));
@@ -244,5 +246,151 @@ void main() {
     final payload = _payloads(h);
     expect(payload, contains('rating_submitted'));
     expect(payload, contains('"rating":4'));
+  });
+
+  testWidgets('PictoChoice: one tap sends picto_selected', (tester) async {
+    final h = _Harness();
+    addTearDown(h.dispose);
+    await _render(tester, h, examples[12]);
+
+    expect(_errors(h), isEmpty);
+    await tester.ensureVisible(find.text('Belly'));
+    await tester.tap(find.text('Chest'));
+    await tester.pump();
+    await tester.tap(find.text('Belly'));
+    await tester.pump();
+
+    expect(h.submitted, hasLength(1), reason: 'one tap answers, once');
+    final payload = _payloads(h);
+    expect(payload, contains(TriageEvents.pictoSelected));
+    expect(payload, contains('chest_pain'));
+  });
+
+  // The offline rules speak the same protocol to the same catalog: every
+  // answer must pass genui's validation and the Dart guard, like Gemini's.
+  group('offline triage', () {
+    final cases = <String, (OfflineTurn, String)>{
+      'alarm text': (const TextTurn('My chest hurts'), 'HIGH URGENCY'),
+      'fever text': (const TextTurn('I have a fever'), 'Chills'),
+      'child text': (const TextTurn('My baby is sick'), "Child's age"),
+      'vague text': (const TextTurn('I feel unwell'), 'Where does it hurt?'),
+      'voice': (const VoiceTurn(), 'Chest'),
+      'alarm picto': (
+        const InteractionTurn('picto_selected', {'id': 'bleeding'}),
+        'HIGH URGENCY',
+      ),
+      'belly picto': (
+        const InteractionTurn('picto_selected', {'id': 'belly'}),
+        'MODERATE URGENCY',
+      ),
+      'symptoms': (
+        const InteractionTurn('symptoms_confirmed', {
+          'confirmed': ['Chills'],
+        }),
+        'MODERATE URGENCY',
+      ),
+      'stiff neck': (
+        const InteractionTurn('symptoms_confirmed', {
+          'confirmed': ['A stiff neck'],
+        }),
+        'HIGH URGENCY',
+      ),
+      'low fever': (
+        const InteractionTurn('vitals_submitted', {'temperatureC': 37.2}),
+        'LOW URGENCY',
+      ),
+      'baby': (
+        const InteractionTurn('child_age:under_3_months', {}),
+        'HIGH URGENCY',
+      ),
+      'emergency called': (
+        const InteractionTurn('action_selected', {
+          'actionId': 'call_emergency',
+        }),
+        'While you wait for help',
+      ),
+      'anything else': (
+        const InteractionTurn('form_submit', {}),
+        'Go to the front desk',
+      ),
+    };
+    for (final MapEntry(key: name, value: (turn, text)) in cases.entries) {
+      testWidgets(name, (tester) async {
+        final h = _Harness();
+        addTearDown(h.dispose);
+        await _render(tester, h, OfflineTriage.respond(turn, 'offline-1'));
+
+        expect(_errors(h), isEmpty);
+        expect(find.textContaining(text, findRichText: true), findsWidgets);
+      });
+    }
+  });
+
+  // What Gemma writes on the phone is untrusted too: Dart checks the three
+  // fields, then the rules compose an interface that must render.
+  group('on-device understanding', () {
+    test('rejects JSON outside the vocabulary', () {
+      expect(Understanding.tryParse('fever'), isNull);
+      expect(Understanding.tryParse({'symptom': 'malaria'}), isNull);
+      expect(Understanding.tryParse({'alarm': true}), isNull);
+      final long = Understanding.tryParse({
+        'symptom': 'cough',
+        'summary': 'x' * 500,
+      });
+      expect(long?.summary, isNull, reason: 'too long: not shown');
+      expect(long?.alarm, isFalse);
+    });
+
+    final cases = <String, (Map<String, Object?>, List<String>)>{
+      'fever, heard in French': (
+        {
+          'symptom': 'fever',
+          'alarm': false,
+          'summary': 'You have had a fever for three days.',
+        },
+        ['I understood', 'You have had a fever for three days.', 'Chills'],
+      ),
+      'alarm flag': (
+        {'symptom': 'belly', 'alarm': true, 'summary': 'Your belly hurts.'},
+        ['Your belly hurts.', 'HIGH URGENCY'],
+      ),
+      'alarm symptom without the flag': (
+        {'symptom': 'chest_pain', 'alarm': false, 'summary': 'Chest pain.'},
+        ['HIGH URGENCY'],
+      ),
+      'child': (
+        {'symptom': 'child', 'alarm': false, 'summary': 'Your baby is hot.'},
+        ["Child's age"],
+      ),
+      'other symptom': (
+        {'symptom': 'cough', 'alarm': false, 'summary': 'You cough.'},
+        ['MODERATE URGENCY'],
+      ),
+      'not understood': (
+        {'symptom': 'other', 'alarm': false, 'summary': ''},
+        ['Where does it hurt?'],
+      ),
+      'not about health': (
+        {'symptom': 'not_health', 'alarm': false, 'summary': 'Weather.'},
+        ['I am here for your health'],
+      ),
+    };
+    for (final MapEntry(key: name, value: (json, texts)) in cases.entries) {
+      testWidgets(name, (tester) async {
+        final h = _Harness();
+        addTearDown(h.dispose);
+        final u = Understanding.tryParse(json)!;
+        await _render(tester, h, OfflineTriage.respondUnderstood(u, 'gemma-1'));
+
+        expect(_errors(h), isEmpty);
+        for (final text in texts) {
+          expect(
+            find.textContaining(text, findRichText: true),
+            findsWidgets,
+            reason: '"$text" not rendered',
+          );
+        }
+      });
+    }
   });
 }

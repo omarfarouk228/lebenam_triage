@@ -1,0 +1,50 @@
+diff --git a/lib/catalog/widgets/urgency_card_widget.dart b/lib/catalog/widgets/urgency_card_widget.dart
+index 4b3737f..1d90806 100644
+--- a/lib/catalog/widgets/urgency_card_widget.dart
++++ b/lib/catalog/widgets/urgency_card_widget.dart
+@@ -43,6 +43,8 @@ class UrgencyCardWidget extends StatelessWidget {
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.stretch,
+           children: [
++            _Pictogram(severity: severity),
++            const Gap(18),
+             Row(
+               children: [
+                 _StatusPill(severity: severity),
+@@ -71,6 +73,36 @@ class UrgencyCardWidget extends StatelessWidget {
+   }
+ }
+ 
++/// Large pictogram of the next step, readable without reading:
++/// home (low), clinic (moderate), emergency (high).
++class _Pictogram extends StatelessWidget {
++  const _Pictogram({required this.severity});
++
++  final Severity severity;
++
++  @override
++  Widget build(BuildContext context) {
++    final icon = switch (severity) {
++      Severity.low => Icons.home_rounded,
++      Severity.moderate => Icons.local_hospital_rounded,
++      Severity.high => Icons.emergency_rounded,
++      Severity.info => Icons.info_outline_rounded,
++    };
++    Widget picto = Container(
++      width: 96,
++      height: 96,
++      decoration: BoxDecoration(color: severity.color, shape: BoxShape.circle),
++      child: Icon(icon, size: 56, color: Colors.white),
++    );
++    if (severity == Severity.high) {
++      picto = picto
++          .animate(onPlay: (c) => c.repeat(reverse: true))
++          .scaleXY(begin: 1, end: 1.08, duration: 700.ms);
++    }
++    return Center(child: ExcludeSemantics(child: picto));
++  }
++}
++
+ class _StatusPill extends StatelessWidget {
+   const _StatusPill({required this.severity});
+ 

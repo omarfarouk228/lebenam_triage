@@ -25,16 +25,18 @@ class TriageCard extends StatelessWidget {
     final base = theme.colorScheme.surfaceContainerLow;
     final isDark = theme.brightness == Brightness.dark;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tint == null
-            ? base
-            : Color.alphaBlend(
-                tint!.withValues(alpha: isDark ? 0.14 : 0.07),
-                base,
-              ),
+    // A Material, not a DecoratedBox: list tiles inside (CheckboxGroup,
+    // SwitchGroup) paint their ink on it (asserted since Flutter 3.47).
+    return Material(
+      color: tint == null
+          ? base
+          : Color.alphaBlend(
+              tint!.withValues(alpha: isDark ? 0.14 : 0.07),
+              base,
+            ),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(
+        side: BorderSide(
           color:
               tint?.withValues(alpha: 0.3) ?? theme.colorScheme.outlineVariant,
         ),

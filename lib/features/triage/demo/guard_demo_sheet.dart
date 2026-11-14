@@ -26,8 +26,8 @@ class GuardScenario {
 
   static const _formStart =
       '{"id": "form", "component": "TriageForm", '
-      '"title": "Parlez-moi de votre douleur", "urgency": 3, '
-      '"bodyPart": "Tête", ';
+      '"title": "Tell me about your pain", "urgency": 3, '
+      '"bodyPart": "Head", ';
 
   /// The TriageForm line, as the agent would write it.
   String get formLine => '$_formStart$extra}';
@@ -43,21 +43,21 @@ class GuardScenario {
       '"components": [\n'
       '{"id": "root", "component": "Column", "spacing": 16, '
       '"children": ["empathy", "form"]},\n'
-      '{"id": "empathy", "component": "InfoCard", "title": "Je vous écoute", '
-      '"body": "Précisez votre douleur pour que je vous oriente.", '
+      '{"id": "empathy", "component": "InfoCard", "title": "I am listening", '
+      '"body": "Tell me more about your pain so I can guide you.", '
       '"icon": "hand", "severity": "info"},\n'
       '$formLine]}}\n'
       '```';
 
   static const all = [
     GuardScenario(
-      title: 'Propriété inventée',
-      caughtBy: 'Garde Dart (strictProps)',
+      title: 'Invented property',
+      caughtBy: 'Dart guard (strictProps)',
       extra: '"painScore": 9',
     ),
     GuardScenario(
-      title: 'Valeur hors bornes',
-      caughtBy: 'Schéma genui (maximum: 5)',
+      title: 'Out-of-range value',
+      caughtBy: 'genui schema (maximum: 5)',
       extra: '"urgency": 9',
     ),
   ];
@@ -78,7 +78,7 @@ Future<void> showGuardDemoSheet(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Démo : Dart comme couche de sécurité',
+            'Demo: Dart as a safety layer',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const Gap(8),
@@ -86,11 +86,11 @@ Future<void> showGuardDemoSheet(
             valueListenable: strictPropsEnabled,
             builder: (context, enabled, _) => SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Garde Dart (strictProps)'),
+              title: const Text('Dart guard (strictProps)'),
               subtitle: Text(
                 enabled
-                    ? 'Les propriétés inconnues sont rejetées'
-                    : 'Désactivée : seul le schéma genui valide',
+                    ? 'Unknown properties are rejected'
+                    : 'Off: only the genui schema validates',
               ),
               value: enabled,
               onChanged: (v) => strictPropsEnabled.value = v,
@@ -130,7 +130,7 @@ class _ScenarioCard extends StatelessWidget {
           children: [
             Text(scenario.title, style: theme.textTheme.titleSmall),
             Text(
-              'Attendu : ${scenario.caughtBy}',
+              'Expected: ${scenario.caughtBy}',
               style: theme.textTheme.bodySmall,
             ),
             const Gap(8),
@@ -168,7 +168,7 @@ class _ScenarioCard extends StatelessWidget {
               child: FilledButton.tonalIcon(
                 onPressed: onInject,
                 icon: const Icon(Icons.bug_report_outlined),
-                label: const Text("Injecter comme réponse de l'agent"),
+                label: const Text('Inject as the agent answer'),
               ),
             ),
           ],

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 
 import 'app.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/triage/offline/on_device_model.dart';
 import 'firebase_options.dart';
 
 const String? _appCheckDebugToken = bool.hasEnvironment('APP_CHECK_DEBUG_TOKEN')
@@ -43,5 +44,8 @@ Future<void> main() async {
     );
   }
   await ThemeController.instance.load();
+  // On-device AI for network cuts: loads Gemma in the background if it is
+  // already on the phone. Never blocks the start.
+  unawaited(OnDeviceModel.instance.init());
   runApp(const LebenamApp());
 }

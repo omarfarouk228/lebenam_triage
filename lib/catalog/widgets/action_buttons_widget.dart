@@ -51,7 +51,7 @@ class ActionButtonsWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title ?? 'Prochaines étapes', style: textTheme.titleMedium),
+          Text(title ?? 'Next steps', style: textTheme.titleMedium),
           const Gap(16),
           _PrimaryButton(action: primary, onTap: () => _tap(context, primary)),
           for (final action in secondary) ...[

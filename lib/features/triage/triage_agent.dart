@@ -25,6 +25,8 @@ import 'package:firebase_ai/firebase_ai.dart' as gemini;
 
 import '../../catalog/catalog_items.dart';
 import '../../core/constants/prompts.dart';
+import 'offline/offline_triage.dart';
+import 'offline/on_device_model.dart';
 
 /// Raised when a turn ends without any interface to show.
 class TriageAgentException implements Exception {
@@ -36,8 +38,28 @@ class TriageAgentException implements Exception {
   String toString() => message;
 }
 
+/// Who composed the interface on screen.
+enum AnswerSource {
+  /// Gemini, in the cloud: it understands and composes.
+  cloud,
+
+  /// Gemma on the phone understood; the rules composed.
+  onDevice,
+
+  /// The rules alone (no model on the phone, or it was too slow).
+  rules,
+}
+
 class TriageAgent {
-  TriageAgent({required String model}) {
+  /// [forceOffline] simulates a power or network cut: every turn is then
+  /// answered on the device. It belongs to the screen, so it survives a new
+  /// consultation. [onDevice], when installed, understands free text and
+  /// voice without the network.
+  TriageAgent({
+    required String model,
+    required this.forceOffline,
+    this.onDevice,
+  }) {
     // 1. The controller owns the surfaces and knows our catalog.
     controller = SurfaceController(catalogs: [triageCatalog]);
 
@@ -53,7 +75,9 @@ class TriageAgent {
     _surfaceSub = controller.surfaceUpdates.listen(_onSurfaceUpdate);
     _eventsSub = conversation.events.listen((event) {
       if (event is ConversationError) {
-        debugPrint('✖ Gemini error: ${event.error.runtimeType}: ${event.error}');
+        debugPrint(
+          '✖ Gemini error: ${event.error.runtimeType}: ${event.error}',
+        );
         error.value = event.error;
       }
     });
@@ -74,6 +98,13 @@ class TriageAgent {
         )
         .startChat();
   }
+
+  final ValueListenable<bool> forceOffline;
+  final OnDeviceModel? onDevice;
+
+  /// Who composed the last interface (cut simulated or Gemini unreachable:
+  /// on the device).
+  final answeredBy = ValueNotifier<AnswerSource>(AnswerSource.cloud);
 
   late final SurfaceController controller;
   late final Conversation conversation;
@@ -181,11 +212,13 @@ class TriageAgent {
       _repairQueued = false;
       if (++_repairs > _maxRepairs) {
         throw const TriageAgentException(
-          "L'agent n'arrive pas à composer l'interface. Reformulez votre demande.",
+          'The agent cannot compose the interface. Please rephrase.',
         );
       }
     }
     error.value = null;
+
+    if (forceOffline.value) return _answerOffline(message, surfaceId);
 
     final content = _toContent(message, surfaceId);
     debugPrint(
@@ -194,20 +227,29 @@ class TriageAgent {
     );
 
     // Stream Gemini's answer straight into genui's parser. A failure before
-    // the first chunk (network blip, App Check token fetch) is retried once.
+    // the first chunk (network blip, App Check token fetch) is retried once,
+    // then the clinic falls back to the offline rules.
     for (var attempt = 1; ; attempt++) {
       var received = false;
       try {
-        await for (final chunk in _chat.sendMessageStream(content)) {
+        final stream = _chat
+            .sendMessageStream(content)
+            .timeout(const Duration(seconds: 20));
+        await for (final chunk in stream) {
           final text = chunk.text;
           if (text != null && text.isNotEmpty) {
             received = true;
             _transport.addChunk(text);
           }
         }
+        answeredBy.value = AnswerSource.cloud;
         break;
       } catch (e) {
-        if (received || attempt > 1) rethrow;
+        if (received || _isConfigError(e)) rethrow;
+        if (attempt > 1 || e is TimeoutException) {
+          debugPrint('⚡ Gemini unreachable, offline triage: $e');
+          return _answerOffline(message, surfaceId);
+        }
         debugPrint('↻ Gemini retry after: $e');
         await Future<void>.delayed(const Duration(seconds: 1));
       }
@@ -218,9 +260,52 @@ class TriageAgent {
 
     if (currentSurfaceId.value != surfaceId && !_repairQueued) {
       throw const TriageAgentException(
-        "L'agent n'a pas produit d'interface. Réessayez.",
+        'The agent did not produce an interface. Try again.',
       );
     }
+  }
+
+  /// Errors the offline rules must not hide: the project is misconfigured.
+  bool _isConfigError(Object e) =>
+      e is gemini.ServiceApiNotEnabled || e is gemini.UnsupportedUserLocation;
+
+  /// Same protocol, same catalog, no cloud: Gemma on the phone understands
+  /// (when installed), the rules in [OfflineTriage] write the A2UI answer,
+  /// and genui renders it like any other.
+  Future<void> _answerOffline(ChatMessage message, String surfaceId) async {
+    final turn = _toOfflineTurn(message);
+    final understood = await onDevice?.understand(turn);
+    answeredBy.value = understood == null
+        ? AnswerSource.rules
+        : AnswerSource.onDevice;
+    _transport.addChunk(
+      understood == null
+          ? OfflineTriage.respond(turn, surfaceId)
+          : OfflineTriage.respondUnderstood(understood, surfaceId),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+
+  OfflineTurn _toOfflineTurn(ChatMessage message) {
+    for (final part in message.parts) {
+      if (part is TextPart && part.text.trim().isNotEmpty) {
+        return TextTurn(part.text.trim());
+      }
+      if (part is DataPart && part.mimeType == _wavMimeType) {
+        return VoiceTurn(Uint8List.fromList(part.bytes));
+      }
+      if (part is DataPart &&
+          part.mimeType == UiPartConstants.interactionMimeType) {
+        if (_decodeInteraction(part)['action'] case final Map action) {
+          final context = action['context'];
+          return InteractionTurn(
+            '${action['name']}',
+            context is Map ? context.cast<String, Object?>() : const {},
+          );
+        }
+      }
+    }
+    return const TextTurn('');
   }
 
   /// Converts a genui [ChatMessage] into the turn Gemini receives: text
@@ -283,6 +368,7 @@ class TriageAgent {
     _transport.dispose();
     controller.dispose();
     currentSurfaceId.dispose();
+    answeredBy.dispose();
     isThinking.dispose();
     error.dispose();
   }

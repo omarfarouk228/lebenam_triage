@@ -37,9 +37,9 @@ class ThemeModeButton extends StatelessWidget {
   const ThemeModeButton({super.key});
 
   static const _options = [
-    (ThemeMode.system, 'Système', Icons.brightness_auto_outlined),
-    (ThemeMode.light, 'Clair', Icons.light_mode_outlined),
-    (ThemeMode.dark, 'Sombre', Icons.dark_mode_outlined),
+    (ThemeMode.system, 'System', Icons.brightness_auto_outlined),
+    (ThemeMode.light, 'Light', Icons.light_mode_outlined),
+    (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
   ];
 
   @override
@@ -48,7 +48,7 @@ class ThemeModeButton extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: controller,
       builder: (context, mode, _) => PopupMenuButton<ThemeMode>(
-        tooltip: 'Apparence',
+        tooltip: 'Appearance',
         initialValue: mode,
         onSelected: controller.set,
         icon: Icon(_options.firstWhere((o) => o.$1 == mode).$3),

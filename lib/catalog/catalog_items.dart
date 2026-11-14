@@ -25,6 +25,7 @@ import '../core/phone/dialer.dart';
 import 'strict_props.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/info_card_widget.dart';
+import 'widgets/picto_choice_widget.dart';
 import 'widgets/shared/severity.dart';
 import 'widgets/shared/triage_card.dart';
 import 'widgets/symptom_checker_widget.dart';
@@ -44,11 +45,12 @@ abstract final class TriageEvents {
   static const triageSubmitted = 'triage_submitted';
   static const vitalsSubmitted = 'vitals_submitted';
   static const actionSelected = 'action_selected';
+  static const pictoSelected = 'picto_selected';
 }
 
 /// The full catalog handed to the `SurfaceController`.
 ///
-/// It mixes our 6 healthcare items with 18 ready-made items from
+/// It mixes our 7 healthcare items with 18 ready-made items from
 /// [genui_catalog](https://pub.dev/packages/genui_catalog): the agent
 /// composes both in the same interface. Only SearchBar is left out (one
 /// event, so one LLM round trip, per keystroke). CheckboxGroup and
@@ -63,6 +65,7 @@ final triageCatalog = Catalog(
     triageFormItem,
     actionButtonsItem,
     vitalInputItem,
+    pictoChoiceItem,
     // genui_catalog: layout.
     kit.columnItem,
     kit.rowItem,
@@ -158,7 +161,7 @@ final urgencyCardItem = CatalogItem(
       ),
       'title': S.string(description: 'Verdict in a few words.'),
       'recommendation': S.string(description: 'What to do, one sentence.'),
-      'waitTime': S.string(description: 'e.g. "Immédiat", "30 à 60 min".'),
+      'waitTime': S.string(description: 'e.g. "Now", "30 to 60 min".'),
       'reason': S.string(description: 'Why this level, one sentence.'),
     },
     required: ['level', 'title', 'recommendation'],
@@ -217,7 +220,7 @@ final symptomCheckerItem = CatalogItem(
         title: data['title'] as String? ?? '',
         question: data['question'] as String?,
         symptoms: symptoms,
-        submitLabel: data['submitLabel'] as String? ?? 'Valider mes réponses',
+        submitLabel: data['submitLabel'] as String? ?? 'Send my answers',
         // ↓ The interaction goes back to the agent as a UserActionEvent.
         onSubmit: (confirmed, denied) => ctx.dispatchEvent(
           UserActionEvent(
@@ -389,7 +392,7 @@ final vitalInputItem = CatalogItem(
         title: data['title'] as String? ?? '',
         note: data['note'] as String?,
         askHeartRate: data['askHeartRate'] == true,
-        submitLabel: data['submitLabel'] as String? ?? 'Envoyer les mesures',
+        submitLabel: data['submitLabel'] as String? ?? 'Send measurements',
         onSubmit: (v) => ctx.dispatchEvent(
           UserActionEvent(
             name: TriageEvents.vitalsSubmitted,
@@ -398,6 +401,61 @@ final vitalInputItem = CatalogItem(
               'temperatureC': ?(v.temperatureC == 0 ? null : v.temperatureC),
               'heartRateBpm': ?v.heartRateBpm,
             },
+          ),
+        ),
+      ),
+    );
+  },
+);
+
+// ─── 7. PictoChoice ──────────────────────────────────────────────────────────
+
+/// For a patient who cannot read: the agent picks the pictograms, Flutter
+/// draws them. One tap sends `picto_selected` back to the agent.
+final pictoChoiceItem = CatalogItem(
+  name: 'PictoChoice',
+  dataSchema: S.object(
+    description:
+        'Large pictogram tiles for a patient who cannot read. One tap '
+        'answers. Sends `picto_selected` with {id, label}.',
+    properties: {
+      'title': S.string(description: 'Very short question (max 5 words).'),
+      'options': S.list(
+        items: S.object(
+          properties: {
+            'id': S.string(description: 'snake_case.'),
+            'picto': S.string(enumValues: Picto.names),
+            'label': S.string(description: '1 or 2 words.'),
+          },
+          required: ['id', 'picto', 'label'],
+        ),
+        minItems: 2,
+        maxItems: 6,
+      ),
+    },
+    required: ['options'],
+    // Documents intent, but genui overrides it: see strict_props.dart.
+    additionalProperties: false,
+  ),
+  widgetBuilder: (ctx) {
+    final data = _json(ctx);
+    return _entrance(
+      ctx,
+      PictoChoiceWidget(
+        title: data['title'] as String?,
+        options: [
+          for (final o in _maps(data['options']))
+            (
+              id: '${o['id'] ?? o['picto']}',
+              picto: Picto.parse(o['picto']),
+              label: '${o['label'] ?? ''}',
+            ),
+        ],
+        onSelected: (o) => ctx.dispatchEvent(
+          UserActionEvent(
+            name: TriageEvents.pictoSelected,
+            sourceComponentId: ctx.id,
+            context: {'id': o.id, 'label': o.label},
           ),
         ),
       ),

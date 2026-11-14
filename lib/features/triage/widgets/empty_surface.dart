@@ -28,19 +28,19 @@ class EmptySurface extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('Comment vous\nsentez-vous ?', style: textTheme.displaySmall)
+              Text('How are you\nfeeling?', style: textTheme.displaySmall)
                   .animate()
                   .fadeIn(duration: 500.ms)
                   .slideY(begin: 0.1, curve: Curves.easeOutCubic),
               const Gap(12),
               Text(
-                "Écrivez ou parlez : l'interface s'adapte à votre situation.",
+                'Type or speak: the interface adapts to your situation.',
                 style: textTheme.bodyLarge?.copyWith(
                   color: textTheme.bodySmall?.color,
                 ),
               ).animate().fadeIn(delay: 100.ms, duration: 500.ms),
               const Gap(32),
-              Text('Exemples', style: textTheme.labelMedium),
+              Text('Examples', style: textTheme.labelMedium),
               const Gap(10),
               for (final (i, text) in suggestions.indexed)
                 Padding(

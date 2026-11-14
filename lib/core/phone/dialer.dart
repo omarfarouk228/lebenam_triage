@@ -37,7 +37,7 @@ Future<void> dial(BuildContext context, CallTarget target) async {
     messenger?.showSnackBar(
       const SnackBar(
         content: Text(
-          'Numéro de la clinique non configuré (CLINIC_PHONE dans .env.json).',
+          'Clinic number not configured (CLINIC_PHONE in .env.json).',
         ),
       ),
     );
@@ -51,9 +51,7 @@ Future<void> dial(BuildContext context, CallTarget target) async {
   }
   if (!opened) {
     messenger?.showSnackBar(
-      SnackBar(
-        content: Text("Impossible d'ouvrir le téléphone. Composez le $number."),
-      ),
+      SnackBar(content: Text('Could not open the phone. Dial $number.')),
     );
   }
 }

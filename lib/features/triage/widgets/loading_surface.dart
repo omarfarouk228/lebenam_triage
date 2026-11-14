@@ -10,7 +10,10 @@ import '../../../core/theme/app_colors.dart';
 /// Made to be visible from the back of a conference room: the audience must
 /// feel the moment when the agent is composing the next interface.
 class LoadingSurface extends StatelessWidget {
-  const LoadingSurface({super.key});
+  const LoadingSurface({super.key, this.onDevice = false});
+
+  /// True when Gemma, on the phone, is the one thinking (network cut).
+  final bool onDevice;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class LoadingSurface extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      label: "L'IA analyse vos symptômes",
+      label: 'The AI is analysing your symptoms',
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         child: Column(
@@ -34,7 +37,7 @@ class LoadingSurface extends StatelessWidget {
                     .animate(onPlay: (c) => c.repeat())
                     .rotate(duration: 2400.ms, curve: Curves.easeInOut),
                 const Gap(10),
-                Text('Analyse en cours', style: textTheme.titleSmall)
+                Text('Analysing', style: textTheme.titleSmall)
                     .animate(onPlay: (c) => c.repeat(reverse: true))
                     .fade(begin: 0.45, end: 1, duration: 900.ms),
               ],
@@ -43,7 +46,9 @@ class LoadingSurface extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 28),
               child: Text(
-                "Gemini compose l'interface adaptée",
+                onDevice
+                    ? 'Gemma is listening, on this phone, offline'
+                    : 'Gemini is composing the right interface',
                 style: textTheme.bodySmall,
               ),
             ),
