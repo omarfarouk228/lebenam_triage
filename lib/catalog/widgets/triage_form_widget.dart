@@ -29,25 +29,25 @@ class TriageFormWidget extends StatefulWidget {
     this.symptoms = const [],
     this.durationOptions = defaultDurations,
     this.bodyParts = defaultBodyParts,
-    this.submitLabel = 'Send',
+    this.submitLabel = 'Envoyer',
   });
 
   static const defaultDurations = [
-    'Less than a day',
-    '1 to 3 days',
-    '4 to 7 days',
-    'More than a week',
+    'Moins d\'un jour',
+    '1 à 3 jours',
+    '4 à 7 jours',
+    'Plus d\'une semaine',
   ];
 
   static const defaultBodyParts = [
-    'Head',
-    'Throat',
-    'Chest',
-    'Belly',
+    'Tête',
+    'Gorge',
+    'Poitrine',
+    'Ventre',
     'Dos',
-    'Arms / legs',
-    'Skin',
-    'Whole body',
+    'Bras / jambes',
+    'Peau',
+    'Tout le corps',
   ];
 
   final String title;
@@ -72,11 +72,11 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
   bool _submitted = false;
 
   static const _urgencyLabels = [
-    'Very mild',
-    'Mild',
-    'Bothersome',
-    'Strong',
-    'Unbearable',
+    'Très léger',
+    'Léger',
+    'Gênant',
+    'Fort',
+    'Insupportable',
   ];
 
   Color get _urgencyColor => switch (_urgency.round()) {
@@ -120,7 +120,7 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
             ),
             if (_symptoms.isNotEmpty) ...[
               const Gap(18),
-              _SectionLabel('Symptoms'),
+              _SectionLabel('Symptômes'),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -134,7 +134,7 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
               ),
             ],
             const Gap(18),
-            _SectionLabel('How strong is it?'),
+            _SectionLabel('Intensité ressentie'),
             Row(
               children: [
                 Expanded(
@@ -171,14 +171,14 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
               style: textTheme.bodySmall?.copyWith(color: _urgencyColor),
             ),
             const Gap(18),
-            _SectionLabel('For how long?'),
+            _SectionLabel('Depuis combien de temps ?'),
             _ChoiceWrap(
               options: widget.durationOptions,
               selected: _duration,
               onSelected: (v) => setState(() => _duration = v),
             ),
             const Gap(18),
-            _SectionLabel('Where does it hurt?'),
+            _SectionLabel('Où avez-vous mal ?'),
             _ChoiceWrap(
               options: widget.bodyParts,
               selected: _bodyPart,
@@ -187,7 +187,7 @@ class _TriageFormWidgetState extends State<TriageFormWidget> {
             const Gap(20),
             SubmitButton(
               label: widget.submitLabel,
-              doneLabel: 'Sent',
+              doneLabel: 'Envoyé',
               done: _submitted,
               onPressed: _submit,
             ),

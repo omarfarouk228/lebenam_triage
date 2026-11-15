@@ -55,10 +55,10 @@ class UrgencyCardWidget extends StatelessWidget {
             const Gap(18),
             Divider(color: color.withValues(alpha: 0.25)),
             const Gap(16),
-            _InfoRow(label: 'Recommended action', value: recommendation),
+            _InfoRow(label: 'Action recommandée', value: recommendation),
             if (waitTime != null) ...[
               const Gap(14),
-              _InfoRow(label: 'Expected wait', value: waitTime!),
+              _InfoRow(label: 'Délai de prise en charge', value: waitTime!),
             ],
             if (reason != null) ...[
               const Gap(16),

@@ -69,17 +69,23 @@ class OnDeviceModel {
   bool _initialized = false;
 
   static const _system = '''
-You are the offline helper of a clinic in West Africa. The patient writes or
-speaks, in English, French or a local language. Fill in the JSON:
-- symptom: the main problem, one of: fever, headache, chest_pain, breathing,
-  cough, belly, bleeding, injury, child (a sick child or baby), pregnancy,
-  tired, other, not_health (the message is not about health).
-- alarm: true for any red flag: chest pain or tightness, difficulty
-  breathing, fainting, seizures, paralysis, heavy bleeding, confusion, stiff
-  neck with fever, fever in a baby under 3 months, vomiting blood, a
-  pregnant woman who is bleeding.
-- summary: ONE short, kind sentence in simple English telling the patient
-  what you understood, e.g. "You have had a fever for three days."''';
+Tu es l'assistant hors-ligne d'une clinique d'Afrique de l'Ouest.
+Le patient écrit ou parle, en français ou dans une langue locale.
+Remplis le JSON :
+- symptom : le problème principal, une valeur parmi : fever (fièvre, corps
+  chaud), headache (mal de tête), chest_pain (douleur dans la poitrine),
+  breathing (mal à respirer), cough (toux), belly (mal de ventre), bleeding
+  (saignement), injury (blessure), child (un enfant ou un bébé malade),
+  pregnancy (grossesse), tired (fatigue), other, not_health (le message ne
+  parle pas de santé).
+- alarm : true pour tout signe d'alarme : douleur ou oppression dans la
+  poitrine, difficulté à respirer, perte de connaissance, convulsions,
+  paralysie, saignement abondant, confusion, raideur de la nuque avec
+  fièvre, fièvre chez un bébé de moins de 3 mois, vomissements de sang,
+  femme enceinte qui saigne.
+- summary : UNE phrase courte et bienveillante, en français simple, avec
+  le vouvoiement, qui dit au patient ce que tu as compris, par exemple
+  "Vous avez de la fièvre depuis trois jours."''';
 
   static final _format = ResponseFormat.jsonSchema({
     'type': 'object',
@@ -130,7 +136,7 @@ speaks, in English, French or a local language. Fill in the JSON:
       await _load();
     } catch (e) {
       debugPrint('✖ On-device model download failed: $e');
-      status.value = Unavailable('Download failed: $e');
+      status.value = Unavailable('Téléchargement impossible : $e');
     }
   }
 
@@ -152,7 +158,7 @@ speaks, in English, French or a local language. Fill in the JSON:
       return model;
     } catch (e) {
       _loading = null;
-      status.value = Unavailable('Could not load the model: $e');
+      status.value = Unavailable('Chargement du modèle impossible : $e');
       rethrow;
     }
   }();
@@ -172,7 +178,7 @@ speaks, in English, French or a local language. Fill in the JSON:
         isUser: true,
       ),
       VoiceTurn(:final wav?) => Message.withAudio(
-        text: 'The patient sent this voice message.',
+        text: 'Le patient a envoyé ce message vocal.',
         audioBytes: wav,
         isUser: true,
       ),

@@ -19,7 +19,7 @@ class VitalInputWidget extends StatefulWidget {
     required this.onSubmit,
     this.note,
     this.askHeartRate = false,
-    this.submitLabel = 'Send measurements',
+    this.submitLabel = 'Envoyer les mesures',
   });
 
   final String title;
@@ -88,19 +88,19 @@ class _VitalInputWidgetState extends State<VitalInputWidget> {
             _VitalField(
               controller: _temperature,
               enabled: !_submitted,
-              label: 'Temperature',
+              label: 'Température',
               unit: '°C',
               hint: '37,5',
               icon: Icons.thermostat_rounded,
               decimal: true,
               validator: (raw) {
                 if (raw == null || raw.trim().isEmpty) {
-                  return 'Enter the temperature (or "0" if not measured)';
+                  return 'Indiquez la température (ou « 0 » si non mesurée)';
                 }
                 final v = _parseTemp(raw);
                 if (v == 0) return null;
                 if (v == null || v < 34 || v > 43) {
-                  return 'Value between 34 and 43 °C';
+                  return 'Valeur entre 34 et 43 °C';
                 }
                 return null;
               },
@@ -110,7 +110,7 @@ class _VitalInputWidgetState extends State<VitalInputWidget> {
               _VitalField(
                 controller: _heartRate,
                 enabled: !_submitted,
-                label: 'Heart rate (optional)',
+                label: 'Fréquence cardiaque (facultatif)',
                 unit: 'bpm',
                 hint: '80',
                 icon: Icons.favorite_rounded,
@@ -118,7 +118,7 @@ class _VitalInputWidgetState extends State<VitalInputWidget> {
                   if (raw == null || raw.trim().isEmpty) return null;
                   final v = int.tryParse(raw.trim());
                   if (v == null || v < 30 || v > 220) {
-                    return 'Value between 30 and 220 bpm';
+                    return 'Valeur entre 30 et 220 bpm';
                   }
                   return null;
                 },
@@ -127,7 +127,7 @@ class _VitalInputWidgetState extends State<VitalInputWidget> {
             const Gap(20),
             SubmitButton(
               label: widget.submitLabel,
-              doneLabel: 'Measurements sent',
+              doneLabel: 'Mesures envoyées',
               done: _submitted,
               onPressed: _submit,
             ),

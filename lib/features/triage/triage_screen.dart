@@ -48,10 +48,10 @@ class _TriageScreenState extends State<TriageScreen> {
 
   /// Scripted sentences for the live demo (fills the field, doesn't send).
   static const _demoScripts = [
-    'I have had a fever and a headache for 3 days',
-    'I have a strong pain in my chest and I find it hard to breathe',
-    'My head hurts',
-    'I cannot read well',
+    'J\'ai de la fièvre et des maux de tête depuis 3 jours',
+    'J\'ai une forte douleur dans la poitrine et j\'ai du mal à respirer',
+    'J\'ai mal à la tête',
+    'Je ne sais pas bien lire',
   ];
 
   @override
@@ -75,12 +75,12 @@ class _TriageScreenState extends State<TriageScreen> {
   /// Makes visible what is normally silent: an interface refused before
   /// reaching the patient, and sent back to the agent to recompose.
   void _showRenderError(String message) =>
-      _showDemoNotice('🛡 Interface refused, sent back to the agent', message);
+      _showDemoNotice('🛡 Interface refusée, renvoyée à l\'agent', message);
 
   /// Guard off: the invented props reached the widget and nobody noticed.
   void _showBypass(String message) => _showDemoNotice(
-    '⚠ Guard off: invented property accepted',
-    '$message, shown without any error.',
+    '⚠ Garde désactivée : propriété inventée acceptée',
+    '$message, affichée sans aucune erreur.',
     color: Colors.orange.shade900,
   );
 
@@ -134,7 +134,7 @@ class _TriageScreenState extends State<TriageScreen> {
     // 16 kHz, 16-bit mono: 32 000 bytes per second after the 44-byte header.
     final seconds = ((wav.length - 44) / 32000).round();
     setState(() {
-      _lastSaid = 'Voice message · ${seconds < 1 ? 1 : seconds} s';
+      _lastSaid = 'Message vocal · ${seconds < 1 ? 1 : seconds} s';
       _retry = () => _agent.sendVoice(wav);
     });
     _agent.sendVoice(wav);
@@ -167,12 +167,12 @@ class _TriageScreenState extends State<TriageScreen> {
         actions: [
           const ThemeModeButton(),
           IconButton(
-            tooltip: 'New consultation',
+            tooltip: 'Nouvelle consultation',
             onPressed: _newConsultation,
             icon: const Icon(Icons.edit_square),
           ),
           PopupMenuButton<String>(
-            tooltip: 'More',
+            tooltip: 'Plus',
             icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (value) => switch (value) {
               '__guard' => _openGuardDemo(),
@@ -186,7 +186,7 @@ class _TriageScreenState extends State<TriageScreen> {
               const PopupMenuDivider(),
               const PopupMenuItem(
                 value: '__guard',
-                child: Text('Demo: Dart guard'),
+                child: Text('Démo : garde Dart'),
               ),
               // A plain item with a trailing check: CheckedPopupMenuItem
               // indents its text, out of line with the other items.
@@ -194,7 +194,7 @@ class _TriageScreenState extends State<TriageScreen> {
                 value: '__offline',
                 child: Row(
                   children: [
-                    const Expanded(child: Text('Simulate a network outage')),
+                    const Expanded(child: Text('Simuler une coupure réseau')),
                     const Gap(12),
                     Icon(
                       _forceOffline.value
@@ -207,7 +207,7 @@ class _TriageScreenState extends State<TriageScreen> {
               ),
               const PopupMenuItem(
                 value: '__ondevice',
-                child: Text('On-device AI (Gemma)'),
+                child: Text('IA sur l\'appareil (Gemma)'),
               ),
             ],
           ),
@@ -254,7 +254,7 @@ class _TriageScreenState extends State<TriageScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
-                        'Demo only. Not a substitute for medical advice.',
+                        'Démo. Ne remplace pas un avis médical.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.labelSmall,
                       ),
@@ -417,8 +417,8 @@ class _OfflineBanner extends StatelessWidget {
                       Expanded(
                         child: Text(
                           gemma
-                              ? 'Offline · Gemma on this phone'
-                              : 'Offline · on-device rules, no AI',
+                              ? 'Hors-ligne · Gemma sur ce téléphone'
+                              : 'Hors-ligne · règles sur l\'appareil, sans IA',
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.onInverseSurface,
                           ),
@@ -467,14 +467,14 @@ class _ErrorView extends StatelessWidget {
 
   String get _message => switch (error) {
     gemini.UnsupportedUserLocation() =>
-      'The Gemini API is not available in this region.',
+      'L\'API Gemini n\'est pas disponible dans cette région.',
     gemini.ServiceApiNotEnabled() =>
-      'Firebase AI Logic is not enabled on this Firebase project.',
+      'Firebase AI Logic n\'est pas activé sur ce projet Firebase.',
     gemini.QuotaExceeded() =>
-      'This project ran out of Gemini quota. Try again later.',
+      'Le quota Gemini de ce projet est épuisé. Réessayez plus tard.',
     gemini.FirebaseAIException(:final message) => message,
     TriageAgentException(:final message) => message,
-    _ => 'Cannot connect. Check the network and try again.',
+    _ => 'Connexion impossible. Vérifiez le réseau et réessayez.',
   };
 
   @override
@@ -500,7 +500,7 @@ class _ErrorView extends StatelessWidget {
             ),
             const Gap(20),
             Text(
-              'Something went wrong',
+              'Un problème est survenu',
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -514,7 +514,7 @@ class _ErrorView extends StatelessWidget {
             ),
             const Gap(24),
             if (onRetry != null)
-              FilledButton(onPressed: onRetry, child: const Text('Try again')),
+              FilledButton(onPressed: onRetry, child: const Text('Réessayer')),
           ],
         ),
       ),

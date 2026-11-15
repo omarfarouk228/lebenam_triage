@@ -18,7 +18,7 @@ class SymptomCheckerWidget extends StatefulWidget {
     required this.symptoms,
     required this.onSubmit,
     this.question,
-    this.submitLabel = 'Send my answers',
+    this.submitLabel = 'Envoyer mes réponses',
   });
 
   final String title;
@@ -106,7 +106,7 @@ class _SymptomCheckerWidgetState extends State<SymptomCheckerWidget> {
           const Gap(14),
           SubmitButton(
             label: widget.submitLabel,
-            doneLabel: 'Answers sent',
+            doneLabel: 'Réponses envoyées',
             done: _submitted,
             onPressed: _submit,
           ),

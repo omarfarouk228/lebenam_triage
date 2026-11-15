@@ -9,9 +9,9 @@ import '../../../core/theme/app_colors.dart';
 /// The agent decides *what* to say, the app decides *how it looks*.
 enum Severity {
   info(AppColors.brand, 'Information', Icons.info_outline_rounded),
-  low(AppColors.safe, 'Low urgency', Icons.check_circle_outline_rounded),
-  moderate(AppColors.warning, 'Moderate urgency', Icons.schedule_rounded),
-  high(AppColors.urgent, 'High urgency', Icons.emergency_rounded);
+  low(AppColors.safe, 'Urgence faible', Icons.check_circle_outline_rounded),
+  moderate(AppColors.warning, 'Urgence modérée', Icons.schedule_rounded),
+  high(AppColors.urgent, 'Urgence élevée', Icons.emergency_rounded);
 
   const Severity(this.color, this.label, this.icon);
 

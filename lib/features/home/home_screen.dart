@@ -54,7 +54,7 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'within earshot',
+                          'à portée de voix',
                           style: GoogleFonts.rochester(
                             fontSize: 34,
                             height: 1,
@@ -65,7 +65,7 @@ class HomeScreen extends StatelessWidget {
                         ).animate().fadeIn(duration: 600.ms),
                         const Gap(8),
                         Text(
-                              'Triage that\nadapts to you.',
+                              'Le triage qui\ns\'adapte à vous.',
                               style: textTheme.displaySmall,
                             )
                             .animate()
@@ -73,8 +73,8 @@ class HomeScreen extends StatelessWidget {
                             .slideY(begin: 0.08, curve: Curves.easeOutCubic),
                         const Gap(16),
                         Text(
-                          'Describe how you feel, by typing or out '
-                          'loud. The AI composes the screen you need.',
+                          'Décrivez ce que vous ressentez, par écrit ou à voix '
+                          'haute. L\'IA compose l\'écran dont vous avez besoin.',
                           style: textTheme.bodyLarge?.copyWith(
                             color: textTheme.bodySmall?.color,
                           ),
@@ -93,11 +93,11 @@ class HomeScreen extends StatelessWidget {
                           style: FilledButton.styleFrom(
                             minimumSize: const Size(0, 56),
                           ),
-                          child: const Text('Start'),
+                          child: const Text('Commencer'),
                         ),
                         const Gap(16),
                         Text(
-                          'Flutter · GenUI SDK · Gemini · DevFest Tamale 2026',
+                          'Flutter · GenUI SDK · Gemini · DevFest Cloud Abidjan 2026',
                           textAlign: TextAlign.center,
                           style: textTheme.labelSmall,
                         ),

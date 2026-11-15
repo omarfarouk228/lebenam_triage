@@ -161,7 +161,7 @@ final urgencyCardItem = CatalogItem(
       ),
       'title': S.string(description: 'Verdict in a few words.'),
       'recommendation': S.string(description: 'What to do, one sentence.'),
-      'waitTime': S.string(description: 'e.g. "Now", "30 to 60 min".'),
+      'waitTime': S.string(description: 'e.g. "Immédiat", "30 à 60 min".'),
       'reason': S.string(description: 'Why this level, one sentence.'),
     },
     required: ['level', 'title', 'recommendation'],
@@ -220,7 +220,7 @@ final symptomCheckerItem = CatalogItem(
         title: data['title'] as String? ?? '',
         question: data['question'] as String?,
         symptoms: symptoms,
-        submitLabel: data['submitLabel'] as String? ?? 'Send my answers',
+        submitLabel: data['submitLabel'] as String? ?? 'Envoyer mes réponses',
         // ↓ The interaction goes back to the agent as a UserActionEvent.
         onSubmit: (confirmed, denied) => ctx.dispatchEvent(
           UserActionEvent(
@@ -392,7 +392,7 @@ final vitalInputItem = CatalogItem(
         title: data['title'] as String? ?? '',
         note: data['note'] as String?,
         askHeartRate: data['askHeartRate'] == true,
-        submitLabel: data['submitLabel'] as String? ?? 'Send measurements',
+        submitLabel: data['submitLabel'] as String? ?? 'Envoyer les mesures',
         onSubmit: (v) => ctx.dispatchEvent(
           UserActionEvent(
             name: TriageEvents.vitalsSubmitted,

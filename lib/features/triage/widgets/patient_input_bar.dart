@@ -68,7 +68,7 @@ class _PatientInputBarState extends State<PatientInputBar> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Allow the microphone to describe your symptoms.'),
+          content: Text('Autorisez le micro pour décrire vos symptômes.'),
         ),
       );
       return;
@@ -164,7 +164,7 @@ class _TextBar extends StatelessWidget {
                 style: theme.textTheme.bodyLarge,
                 onSubmitted: (_) => onSend(),
                 decoration: const InputDecoration(
-                  hintText: 'Describe your symptoms',
+                  hintText: 'Décrivez vos symptômes',
                   filled: false,
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -186,7 +186,7 @@ class _TextBar extends StatelessWidget {
             child: busy
                 ? const _RoundButton(
                     key: ValueKey('busy'),
-                    tooltip: 'Analysing',
+                    tooltip: 'Analyse en cours',
                     filled: false,
                     child: SizedBox.square(
                       dimension: 18,
@@ -196,13 +196,13 @@ class _TextBar extends StatelessWidget {
                 : hasText
                 ? _RoundButton(
                     key: const ValueKey('send'),
-                    tooltip: 'Send',
+                    tooltip: 'Envoyer',
                     onTap: onSend,
                     child: const Icon(Icons.arrow_upward_rounded, size: 22),
                   )
                 : _RoundButton(
                     key: const ValueKey('mic'),
-                    tooltip: 'Speak',
+                    tooltip: 'Parler',
                     onTap: onMic,
                     child: const Icon(Icons.mic_none_rounded, size: 22),
                   ),
@@ -234,7 +234,7 @@ class _RecordingBar extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      label: 'Recording',
+      label: 'Enregistrement',
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
@@ -245,7 +245,7 @@ class _RecordingBar extends StatelessWidget {
         child: Row(
           children: [
             _RoundButton(
-              tooltip: 'Cancel',
+              tooltip: 'Annuler',
               filled: false,
               onTap: onCancel,
               child: const Icon(Icons.close_rounded, size: 22),
@@ -275,7 +275,7 @@ class _RecordingBar extends StatelessWidget {
             Expanded(child: _LevelBars(level: recorder.level)),
             const Gap(8),
             _RoundButton(
-              tooltip: 'Send voice message',
+              tooltip: 'Envoyer le message vocal',
               onTap: onSend,
               child: const Icon(Icons.arrow_upward_rounded, size: 22),
             ),

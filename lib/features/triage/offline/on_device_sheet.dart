@@ -57,9 +57,12 @@ class _OnDeviceSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('On-device AI', style: textTheme.headlineSmall),
                           Text(
-                            'Gemma 4 E2B · GPU · 2.6 GB',
+                            'IA sur l\'appareil',
+                            style: textTheme.headlineSmall,
+                          ),
+                          Text(
+                            'Gemma 4 E2B · GPU · 2,6 Go',
                             style: textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -71,24 +74,24 @@ class _OnDeviceSheet extends StatelessWidget {
                 ),
                 const Gap(24),
                 Text(
-                  'When the network is gone, Gemma runs on this phone. It '
-                  'only understands the patient, by text or voice. The app '
-                  'still composes the interface, with the same catalog and '
-                  'the same Dart checks.',
+                  'Quand le réseau disparaît, Gemma tourne sur ce téléphone. '
+                  'Il comprend seulement le patient, par écrit ou à la '
+                  'voix. L\'app compose toujours l\'interface, avec le même '
+                  'catalogue et les mêmes contrôles Dart.',
                   style: textTheme.bodyLarge,
                 ),
                 const Gap(16),
                 _Step(
                   icon: Icons.cloud_rounded,
-                  text: 'Online: Gemini understands and composes.',
+                  text: 'En ligne : Gemini comprend et compose.',
                 ),
                 _Step(
                   icon: Icons.memory_rounded,
-                  text: 'Offline: Gemma understands, Dart composes.',
+                  text: 'Hors-ligne : Gemma comprend, Dart compose.',
                 ),
                 _Step(
                   icon: Icons.rule_rounded,
-                  text: 'No model: rules and pictograms.',
+                  text: 'Sans modèle : règles et pictogrammes.',
                 ),
                 const Gap(28),
                 switch (status) {
@@ -100,7 +103,9 @@ class _OnDeviceSheet extends StatelessWidget {
                       ),
                       onPressed: model.download,
                       icon: const Icon(Icons.download_rounded),
-                      label: const Text('Download the model (2.6 GB, Wi-Fi)'),
+                      label: const Text(
+                        'Télécharger le modèle (2,6 Go, Wi-Fi)',
+                      ),
                     ),
                   ),
                   Downloading(:final percent) => Column(
@@ -115,7 +120,7 @@ class _OnDeviceSheet extends StatelessWidget {
                       ),
                       const Gap(12),
                       Text(
-                        'Downloading… $percent %',
+                        'Téléchargement… $percent %',
                         style: textTheme.titleMedium,
                       ),
                     ],
@@ -128,15 +133,15 @@ class _OnDeviceSheet extends StatelessWidget {
                       ),
                       const Gap(16),
                       Text(
-                        'Loading the model on the GPU…',
+                        'Chargement du modèle sur le GPU…',
                         style: textTheme.titleMedium,
                       ),
                     ],
                   ),
                   Installed(loaded: true) => Text(
                     latency == null
-                        ? '✅ Ready, offline'
-                        : '✅ Ready, offline · last answer in '
+                        ? '✅ Prêt, hors-ligne'
+                        : '✅ Prêt, hors-ligne · dernière réponse en '
                               '${(latency.inMilliseconds / 1000).toStringAsFixed(1)} s',
                     style: textTheme.titleMedium,
                   ),
@@ -144,7 +149,7 @@ class _OnDeviceSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Not available. The rules answer offline.',
+                        'Indisponible. Les règles répondent hors-ligne.',
                         style: textTheme.titleMedium,
                       ),
                       const Gap(4),
@@ -152,7 +157,7 @@ class _OnDeviceSheet extends StatelessWidget {
                       const Gap(16),
                       OutlinedButton(
                         onPressed: model.download,
-                        child: const Text('Try again'),
+                        child: const Text('Réessayer'),
                       ),
                     ],
                   ),

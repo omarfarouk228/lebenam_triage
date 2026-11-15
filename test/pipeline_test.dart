@@ -93,23 +93,23 @@ void main() {
   // Every example must pass genui's schema validation and render, including
   // the genui_catalog components it uses.
   for (final (i, texts) in [
-    ['Help called', 'Help on the way', 'Sit down', 'Loosen'],
-    ['Do this now', 'Drink often', 'Protect yourself from malaria'],
-    ['Temperature', '39.2 °C', 'Fever for'],
-    ['Your sheet', 'First name', 'Create my sheet'],
-    ['Your medical history', 'Sickle cell disease', 'Confirm'],
+    ['Secours appelés', 'Secours en route', 'Asseyez-vous', 'Desserrez'],
+    ['À faire dès maintenant', 'Buvez souvent', 'Se protéger du paludisme'],
+    ['Température', '39,2 °C', 'Fièvre depuis'],
+    ['Votre fiche', 'Prénom', 'Créer ma fiche'],
+    ['Vos antécédents', 'Drépanocytose', 'Valider'],
     [
       'Afi',
-      '34 years old · Moderate urgency',
-      'Your symptoms',
-      'Your consultation',
-      'SMS reminder',
-      'Save',
+      '34 ans · Urgence modérée',
+      'Vos symptômes',
+      'Votre consultation',
+      'Rappel par SMS',
+      'Enregistrer',
     ],
-    ["Child's age"],
-    ['Temperature (°C)'],
-    ['Tap a picture', 'Where does it hurt?', 'Chest', 'My child'],
-    ['I am here for your health'],
+    ["Âge de l'enfant"],
+    ['Température (°C)'],
+    ['Touchez une image', 'Où avez-vous mal ?', 'Poitrine', 'Mon enfant'],
+    ['Je suis là pour votre santé'],
   ].indexed) {
     final n = i + 5;
     testWidgets('Ex. $n renders with genui_catalog components', (tester) async {
@@ -134,21 +134,22 @@ void main() {
     await _render(tester, h, examples[0]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('I am here to help you'), findsOneWidget);
-    expect(find.text('Chills or sweating'), findsOneWidget);
+    expect(find.text('Je suis là pour vous aider'), findsOneWidget);
+    expect(find.text('Des frissons ou des sueurs'), findsOneWidget);
 
-    // Tapping two symptoms then "Send my answers" sends ONE event back to the agent.
-    await tester.tap(find.text('Chills or sweating'));
-    await tester.tap(find.text('Body aches'));
+    // Tapping two symptoms then "Envoyer mes réponses" sends ONE event back
+    // to the agent.
+    await tester.tap(find.text('Des frissons ou des sueurs'));
+    await tester.tap(find.text('Des courbatures'));
     await tester.pump();
-    await tester.ensureVisible(find.text('Send my answers'));
-    await tester.tap(find.text('Send my answers'));
+    await tester.ensureVisible(find.text('Envoyer mes réponses'));
+    await tester.tap(find.text('Envoyer mes réponses'));
     await tester.pump();
 
     expect(h.submitted, hasLength(1));
     final payload = _payloads(h);
     expect(payload, contains(TriageEvents.symptomsConfirmed));
-    expect(payload, contains('Body aches'));
+    expect(payload, contains('Des courbatures'));
   });
 
   testWidgets('Ex. 2: moderate verdict + actions', (tester) async {
@@ -157,11 +158,11 @@ void main() {
     await _render(tester, h, examples[1]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('MODERATE URGENCY'), findsOneWidget);
-    expect(find.text('Go to the clinic'), findsOneWidget);
+    expect(find.text('URGENCE MODÉRÉE'), findsOneWidget);
+    expect(find.text('Aller à la clinique'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Go to the clinic'));
-    await tester.tap(find.text('Go to the clinic'));
+    await tester.ensureVisible(find.text('Aller à la clinique'));
+    await tester.tap(find.text('Aller à la clinique'));
     await tester.pump();
     expect(_payloads(h), contains('go_to_clinic'));
   });
@@ -172,8 +173,8 @@ void main() {
     await _render(tester, h, examples[2]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('Tell me about your pain'), findsOneWidget);
-    expect(find.text('Headache'), findsOneWidget);
+    expect(find.text('Parlez-moi de votre douleur'), findsOneWidget);
+    expect(find.text('Mal de tête'), findsOneWidget);
   });
 
   testWidgets('Ex. 4: chest pain: red card + emergency call', (tester) async {
@@ -182,11 +183,11 @@ void main() {
     await _render(tester, h, examples[3]);
 
     expect(_errors(h), isEmpty);
-    expect(find.text('HIGH URGENCY'), findsOneWidget);
+    expect(find.text('URGENCE ÉLEVÉE'), findsOneWidget);
 
     // Call actions show the app-owned number, never one from the LLM.
     final call = find.textContaining(
-      'Call emergency services  ·  118',
+      'Appeler les urgences  ·  118',
       findRichText: true,
     );
     expect(call, findsOneWidget);
@@ -215,20 +216,20 @@ void main() {
     expect(_errors(h), contains('HeartRateChart'));
   });
 
-  testWidgets('CheckboxGroup sends the history once, on "Confirm"', (
+  testWidgets('CheckboxGroup sends the history once, on "Valider"', (
     tester,
   ) async {
     final h = _Harness();
     addTearDown(h.dispose);
     await _render(tester, h, examples[8]);
 
-    await tester.tap(find.text('Pregnant'));
-    await tester.tap(find.text('Diabetes'));
+    await tester.tap(find.text('Enceinte'));
+    await tester.tap(find.text('Diabète'));
     await tester.pump();
     expect(h.submitted, isEmpty, reason: 'checking a box stays local');
 
-    await tester.ensureVisible(find.text('Confirm'));
-    await tester.tap(find.text('Confirm'));
+    await tester.ensureVisible(find.text('Valider'));
+    await tester.tap(find.text('Valider'));
     await tester.pump();
     expect(h.submitted, hasLength(1));
     expect(_payloads(h), contains('medical_history:pregnancy,diabetes'));
@@ -254,10 +255,10 @@ void main() {
     await _render(tester, h, examples[12]);
 
     expect(_errors(h), isEmpty);
-    await tester.ensureVisible(find.text('Belly'));
-    await tester.tap(find.text('Chest'));
+    await tester.ensureVisible(find.text('Ventre'));
+    await tester.tap(find.text('Poitrine'));
     await tester.pump();
-    await tester.tap(find.text('Belly'));
+    await tester.tap(find.text('Ventre'));
     await tester.pump();
 
     expect(h.submitted, hasLength(1), reason: 'one tap answers, once');
@@ -270,48 +271,62 @@ void main() {
   // answer must pass genui's validation and the Dart guard, like Gemini's.
   group('offline triage', () {
     final cases = <String, (OfflineTurn, String)>{
-      'alarm text': (const TextTurn('My chest hurts'), 'HIGH URGENCY'),
-      'fever text': (const TextTurn('I have a fever'), 'Chills'),
-      'child text': (const TextTurn('My baby is sick'), "Child's age"),
-      'vague text': (const TextTurn('I feel unwell'), 'Where does it hurt?'),
-      'voice': (const VoiceTurn(), 'Chest'),
+      'alarm text': (
+        const TextTurn("J'ai mal à la poitrine"),
+        'URGENCE ÉLEVÉE',
+      ),
+      // Typed without accents: the rules must still recognise the fever.
+      'fever text': (
+        const TextTurn("J'ai de la fievre depuis trois jours"),
+        'Des frissons',
+      ),
+      // A baby with a fever: the age question comes before the fever one.
+      'child text': (
+        const TextTurn('Mon bébé a de la fièvre depuis hier'),
+        "Âge de l'enfant",
+      ),
+      'vague text': (
+        const TextTurn('Je ne me sens pas bien'),
+        'Où avez-vous mal ?',
+      ),
+      'voice': (const VoiceTurn(), 'Poitrine'),
       'alarm picto': (
         const InteractionTurn('picto_selected', {'id': 'bleeding'}),
-        'HIGH URGENCY',
+        'URGENCE ÉLEVÉE',
       ),
       'belly picto': (
         const InteractionTurn('picto_selected', {'id': 'belly'}),
-        'MODERATE URGENCY',
+        'URGENCE MODÉRÉE',
       ),
       'symptoms': (
         const InteractionTurn('symptoms_confirmed', {
-          'confirmed': ['Chills'],
+          'confirmed': ['Des frissons'],
         }),
-        'MODERATE URGENCY',
+        'URGENCE MODÉRÉE',
       ),
       'stiff neck': (
         const InteractionTurn('symptoms_confirmed', {
-          'confirmed': ['A stiff neck'],
+          'confirmed': ['Une nuque raide'],
         }),
-        'HIGH URGENCY',
+        'URGENCE ÉLEVÉE',
       ),
       'low fever': (
         const InteractionTurn('vitals_submitted', {'temperatureC': 37.2}),
-        'LOW URGENCY',
+        'URGENCE FAIBLE',
       ),
       'baby': (
         const InteractionTurn('child_age:under_3_months', {}),
-        'HIGH URGENCY',
+        'URGENCE ÉLEVÉE',
       ),
       'emergency called': (
         const InteractionTurn('action_selected', {
           'actionId': 'call_emergency',
         }),
-        'While you wait for help',
+        'En attendant les secours',
       ),
       'anything else': (
         const InteractionTurn('form_submit', {}),
-        'Go to the front desk',
+        "Allez à l'accueil",
       ),
     };
     for (final MapEntry(key: name, value: (turn, text)) in cases.entries) {
@@ -346,33 +361,49 @@ void main() {
         {
           'symptom': 'fever',
           'alarm': false,
-          'summary': 'You have had a fever for three days.',
+          'summary': 'Vous avez de la fièvre depuis trois jours.',
         },
-        ['I understood', 'You have had a fever for three days.', 'Chills'],
+        [
+          "J'ai compris",
+          'Vous avez de la fièvre depuis trois jours.',
+          'Des frissons',
+        ],
       ),
       'alarm flag': (
-        {'symptom': 'belly', 'alarm': true, 'summary': 'Your belly hurts.'},
-        ['Your belly hurts.', 'HIGH URGENCY'],
+        {
+          'symptom': 'belly',
+          'alarm': true,
+          'summary': 'Vous avez mal au ventre.',
+        },
+        ['Vous avez mal au ventre.', 'URGENCE ÉLEVÉE'],
       ),
       'alarm symptom without the flag': (
-        {'symptom': 'chest_pain', 'alarm': false, 'summary': 'Chest pain.'},
-        ['HIGH URGENCY'],
+        {
+          'symptom': 'chest_pain',
+          'alarm': false,
+          'summary': 'Vous avez mal à la poitrine.',
+        },
+        ['URGENCE ÉLEVÉE'],
       ),
       'child': (
-        {'symptom': 'child', 'alarm': false, 'summary': 'Your baby is hot.'},
-        ["Child's age"],
+        {
+          'symptom': 'child',
+          'alarm': false,
+          'summary': 'Votre bébé a de la fièvre.',
+        },
+        ["Âge de l'enfant"],
       ),
       'other symptom': (
-        {'symptom': 'cough', 'alarm': false, 'summary': 'You cough.'},
-        ['MODERATE URGENCY'],
+        {'symptom': 'cough', 'alarm': false, 'summary': 'Vous toussez.'},
+        ['URGENCE MODÉRÉE'],
       ),
       'not understood': (
         {'symptom': 'other', 'alarm': false, 'summary': ''},
-        ['Where does it hurt?'],
+        ['Où avez-vous mal ?'],
       ),
       'not about health': (
-        {'symptom': 'not_health', 'alarm': false, 'summary': 'Weather.'},
-        ['I am here for your health'],
+        {'symptom': 'not_health', 'alarm': false, 'summary': 'La météo.'},
+        ['Je suis là pour votre santé'],
       ),
     };
     for (final MapEntry(key: name, value: (json, texts)) in cases.entries) {

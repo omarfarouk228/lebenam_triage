@@ -71,7 +71,7 @@ void main() {
     final errors = await _play(tester, _inventedProp);
 
     expect(errors, isEmpty);
-    expect(find.text('Tell me about your pain'), findsOneWidget);
+    expect(find.text('Parlez-moi de votre douleur'), findsOneWidget);
   });
 
   testWidgets('the guard rejects an invented prop and tells the agent once', (
@@ -82,8 +82,8 @@ void main() {
     expect(errors, hasLength(1));
     expect(errors.single, contains('VALIDATION_FAILED'));
     expect(errors.single, contains('painScore'));
-    expect(find.text('Tell me about your pain'), findsNothing);
-    expect(find.text('I am listening'), findsOneWidget);
+    expect(find.text('Parlez-moi de votre douleur'), findsNothing);
+    expect(find.text('Je vous écoute'), findsOneWidget);
   });
 
   testWidgets('genui itself rejects an out-of-bounds value', (tester) async {

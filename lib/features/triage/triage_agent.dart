@@ -212,7 +212,7 @@ class TriageAgent {
       _repairQueued = false;
       if (++_repairs > _maxRepairs) {
         throw const TriageAgentException(
-          'The agent cannot compose the interface. Please rephrase.',
+          'L\'agent n\'arrive pas à composer l\'interface. Reformulez.',
         );
       }
     }
@@ -260,7 +260,7 @@ class TriageAgent {
 
     if (currentSurfaceId.value != surfaceId && !_repairQueued) {
       throw const TriageAgentException(
-        'The agent did not produce an interface. Try again.',
+        'L\'agent n\'a pas produit d\'interface. Réessayez.',
       );
     }
   }

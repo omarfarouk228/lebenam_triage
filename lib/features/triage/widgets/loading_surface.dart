@@ -21,7 +21,7 @@ class LoadingSurface extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      label: 'The AI is analysing your symptoms',
+      label: 'L\'IA analyse vos symptômes',
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         child: Column(
@@ -37,7 +37,7 @@ class LoadingSurface extends StatelessWidget {
                     .animate(onPlay: (c) => c.repeat())
                     .rotate(duration: 2400.ms, curve: Curves.easeInOut),
                 const Gap(10),
-                Text('Analysing', style: textTheme.titleSmall)
+                Text('Analyse en cours', style: textTheme.titleSmall)
                     .animate(onPlay: (c) => c.repeat(reverse: true))
                     .fade(begin: 0.45, end: 1, duration: 900.ms),
               ],
@@ -47,8 +47,8 @@ class LoadingSurface extends StatelessWidget {
               padding: const EdgeInsets.only(left: 28),
               child: Text(
                 onDevice
-                    ? 'Gemma is listening, on this phone, offline'
-                    : 'Gemini is composing the right interface',
+                    ? 'Gemma écoute, sur ce téléphone, sans réseau'
+                    : 'Gemini compose la bonne interface',
                 style: textTheme.bodySmall,
               ),
             ),

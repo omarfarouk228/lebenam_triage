@@ -91,8 +91,8 @@ abstract final class OfflineTriage {
       _surface(surfaceId, switch (turn) {
         TextTurn(:final text) => _fromText(text),
         VoiceTurn() => _pictos(
-          'I cannot listen without a network',
-          'Tap the picture that matches how you feel.',
+          'Je ne peux pas écouter sans réseau',
+          'Touchez l\'image qui correspond à ce que vous ressentez.',
         ),
         InteractionTurn(:final name, :final context) => _fromInteraction(
           name,
@@ -109,8 +109,9 @@ abstract final class OfflineTriage {
     if (u.notHealth) {
       return [
         _info(
-          'I am here for your health',
-          'Describe how you feel: fever, pain, cough... I will guide you.',
+          'Je suis là pour votre santé',
+          'Décrivez ce que vous ressentez : fièvre, douleur, toux... '
+              'Je vous oriente.',
           icon: 'learn',
         ),
       ];
@@ -123,8 +124,8 @@ abstract final class OfflineTriage {
             Picto.child => _childAge(),
             Picto.fever => _fever(),
             Picto.other => _pictos(
-              'Show me',
-              'I did not understand well. Tap what bothers you.',
+              'Montrez-moi',
+              'Je n\'ai pas bien compris. Touchez ce qui vous gêne.',
             ),
             _ => _verdict(_Level.moderate),
           };
@@ -132,49 +133,81 @@ abstract final class OfflineTriage {
     if (summary == null) return components;
     // The patient sees no transcript: the first card says what was heard.
     return [
-      {...components.first, 'title': 'I understood', 'body': summary},
+      {...components.first, 'title': 'J\'ai compris', 'body': summary},
       ...components.skip(1),
     ];
   }
 
   // ── Rules ─────────────────────────────────────────────────────────────────
 
-  // English first; French kept for patients from Togo.
+  // Keywords are written without accents: [_fold] strips them from the
+  // patient's text, so "fièvre" and "fievre" both match.
   static const _alarmWords = [
-    'chest',
-    'breath',
-    'faint',
-    'unconscious',
-    'seizure',
+    'poitrine',
+    'thorax',
+    'thoraci',
+    'respir',
+    'etouff',
+    'essouffl',
+    'evanoui',
+    'inconscient',
+    'connaissance',
     'convuls',
     'paralys',
-    'bleed',
-    'blood',
-    'stiff neck',
-    'confus',
-    'poitrine',
-    'respir',
     'saign',
+    'sang',
     'nuque',
+    'confus',
   ];
+  static const _childWords = [
+    'enfant',
+    'bebe',
+    'nourrisson',
+    'mon fils',
+    'ma fille',
+  ];
+  static const _feverWords = ['fievre', 'corps chaud', 'temperature', 'palu'];
 
   static const _alarmPictos = {'chest_pain', 'breathing', 'bleeding'};
 
+  static const _accents = {
+    'à': 'a',
+    'â': 'a',
+    'ä': 'a',
+    'ç': 'c',
+    'é': 'e',
+    'è': 'e',
+    'ê': 'e',
+    'ë': 'e',
+    'î': 'i',
+    'ï': 'i',
+    'ô': 'o',
+    'ö': 'o',
+    'ù': 'u',
+    'û': 'u',
+    'ü': 'u',
+    'œ': 'oe',
+  };
+
+  /// Lower case, without accents (precomposed or combining).
+  static String _fold(String text) => text
+      .toLowerCase()
+      .replaceAllMapped(RegExp('[àâäçéèêëîïôöùûüœ]'), (m) => _accents[m[0]]!)
+      .replaceAll(RegExp('[\u0300-\u036f]'), '');
+
   static bool _has(String text, List<String> words) {
-    final t = text.toLowerCase();
+    final t = _fold(text);
     return words.any(t.contains);
   }
 
   static List<Map<String, Object?>> _fromText(String text) {
     if (_has(text, _alarmWords)) return _alarm();
-    if (_has(text, ['child', 'baby', 'daughter', 'enfant', 'bébé'])) {
-      return _childAge();
-    }
-    if (_has(text, ['fever', 'fièvre'])) return _fever();
+    if (_has(text, _childWords)) return _childAge();
+    if (_has(text, _feverWords)) return _fever();
     // Not understood without the model: ask with pictures, not words.
     return _pictos(
-      'Show me',
-      'Without a network, I understand pictures better. Tap what bothers you.',
+      'Montrez-moi',
+      'Sans réseau, je comprends mieux les images. Touchez ce qui vous gêne.',
     );
   }
 
@@ -191,7 +224,7 @@ abstract final class OfflineTriage {
     }
     if (name == TriageEvents.symptomsConfirmed) {
       final confirmed = '${context['confirmed']}';
-      return _has(confirmed, ['neck', 'confusion', 'drows'])
+      return _has(confirmed, ['nuque', 'confus', 'somnol'])
           ? _alarm()
           : _verdict(_Level.moderate);
     }
@@ -236,22 +269,22 @@ abstract final class OfflineTriage {
     {
       'id': 'pictos',
       'component': 'PictoChoice',
-      'title': 'Where does it hurt?',
+      'title': 'Où avez-vous mal ?',
       'options': [
-        {'id': 'fever', 'picto': 'fever', 'label': 'Fever'},
-        {'id': 'headache', 'picto': 'headache', 'label': 'Head'},
-        {'id': 'chest_pain', 'picto': 'chest_pain', 'label': 'Chest'},
-        {'id': 'belly', 'picto': 'belly', 'label': 'Belly'},
-        {'id': 'child', 'picto': 'child', 'label': 'My child'},
-        {'id': 'bleeding', 'picto': 'bleeding', 'label': 'Blood'},
+        {'id': 'fever', 'picto': 'fever', 'label': 'Fièvre'},
+        {'id': 'headache', 'picto': 'headache', 'label': 'Tête'},
+        {'id': 'chest_pain', 'picto': 'chest_pain', 'label': 'Poitrine'},
+        {'id': 'belly', 'picto': 'belly', 'label': 'Ventre'},
+        {'id': 'child', 'picto': 'child', 'label': 'Mon enfant'},
+        {'id': 'bleeding', 'picto': 'bleeding', 'label': 'Sang'},
       ],
     },
   ];
 
   static List<Map<String, Object?>> _alarm() => [
     _info(
-      'Stay calm, we are taking care of you',
-      'Sit down and do not stay alone.',
+      'Restez calme, on s\'occupe de vous',
+      'Asseyez-vous et ne restez pas seul.',
       icon: 'heart',
       severity: 'high',
     ),
@@ -259,16 +292,16 @@ abstract final class OfflineTriage {
       'id': 'verdict',
       'component': 'UrgencyCard',
       'level': 'high',
-      'title': 'Possible emergency',
-      'recommendation': 'Call emergency services now.',
-      'waitTime': 'Now',
-      'reason': 'This sign needs a health worker right away.',
+      'title': 'Urgence possible',
+      'recommendation': 'Appelez les urgences maintenant.',
+      'waitTime': 'Immédiat',
+      'reason': 'Ce signe demande un soignant tout de suite.',
     },
     _actions(
-      'Act now',
+      'Agissez maintenant',
       {
         'id': 'call_emergency',
-        'label': 'Call emergency services',
+        'label': 'Appeler les urgences',
         'icon': 'emergency',
         'emergency': true,
         'call': 'emergency',
@@ -276,7 +309,7 @@ abstract final class OfflineTriage {
       [
         {
           'id': 'call_staff',
-          'label': 'Alert the nurse',
+          'label': 'Prévenir l\'infirmier',
           'icon': 'doctor',
           'emergency': true,
           'call': 'clinic',
@@ -287,48 +320,48 @@ abstract final class OfflineTriage {
 
   static List<Map<String, Object?>> _fever() => [
     _info(
-      'I am here to help you',
-      'Answer a few questions about your fever.',
+      'Je suis là pour vous aider',
+      'Répondez à quelques questions sur votre fièvre.',
       icon: 'thermometer',
     ),
     {
       'id': 'checker',
       'component': 'SymptomChecker',
-      'title': 'Do you also have…',
-      'question': 'Tap what you feel.',
+      'title': 'Avez-vous aussi…',
+      'question': 'Touchez ce que vous ressentez.',
       'symptoms': [
-        {'id': 'chills', 'label': 'Chills'},
-        {'id': 'vomiting', 'label': 'Vomiting'},
-        {'id': 'stiff_neck', 'label': 'A stiff neck'},
-        {'id': 'confusion', 'label': 'Confusion or drowsiness'},
+        {'id': 'chills', 'label': 'Des frissons'},
+        {'id': 'vomiting', 'label': 'Des vomissements'},
+        {'id': 'stiff_neck', 'label': 'Une nuque raide'},
+        {'id': 'confusion', 'label': 'Une confusion ou somnolence'},
       ],
-      'submitLabel': 'Send',
+      'submitLabel': 'Envoyer',
     },
   ];
 
   static List<Map<String, Object?>> _childAge() => [
     _info(
-      'Let us take care of your child',
-      'In very young children, fever needs more attention.',
+      'Occupons-nous de votre enfant',
+      'Chez les tout-petits, la fièvre demande plus d\'attention.',
     ),
     {
       'id': 'age',
       'component': 'SelectInput',
-      'label': 'Child\'s age',
-      'placeholder': 'Choose',
+      'label': 'Âge de l\'enfant',
+      'placeholder': 'Choisir',
       'event': 'child_age',
       'options': [
-        {'value': 'under_3_months', 'label': 'Under 3 months'},
-        {'value': '3_months_5_years', 'label': '3 months to 5 years'},
-        {'value': '5_15_years', 'label': '5 to 15 years'},
+        {'value': 'under_3_months', 'label': 'Moins de 3 mois'},
+        {'value': '3_months_5_years', 'label': '3 mois à 5 ans'},
+        {'value': '5_15_years', 'label': '5 à 15 ans'},
       ],
     },
   ];
 
   static List<Map<String, Object?>> _verdict(_Level level) => [
     _info(
-      'Thank you for your answers',
-      'Drink water and rest in the meantime.',
+      'Merci pour vos réponses',
+      'Buvez de l\'eau et reposez-vous en attendant.',
       icon: 'water',
       severity: level.name,
     ),
@@ -341,12 +374,12 @@ abstract final class OfflineTriage {
       'waitTime': level.waitTime,
     },
     _actions(
-      'What would you like to do?',
-      {'id': 'go_to_clinic', 'label': 'Go to the front desk', 'icon': 'clinic'},
+      'Que voulez-vous faire ?',
+      {'id': 'go_to_clinic', 'label': 'Aller à l\'accueil', 'icon': 'clinic'},
       [
         {
           'id': 'call_nurse',
-          'label': 'Call a nurse',
+          'label': 'Appeler un infirmier',
           'icon': 'phone',
           'call': 'clinic',
         },
@@ -356,27 +389,30 @@ abstract final class OfflineTriage {
 
   static List<Map<String, Object?>> _waitForHelp() => [
     _info(
-      'Help has been alerted',
-      'You did the right thing by calling. Follow these steps.',
+      'Les secours sont prévenus',
+      'Vous avez bien fait d\'appeler. Suivez ces gestes.',
       icon: 'heart',
       severity: 'high',
     ),
     {
       'id': 'steps',
       'component': 'ListCard',
-      'title': 'While you wait for help',
+      'title': 'En attendant les secours',
       'items': [
-        {'title': 'Sit down', 'subtitle': 'Without any effort.'},
-        {'title': 'Do not stay alone', 'subtitle': 'Call someone close.'},
-        {'title': 'Keep your phone', 'subtitle': 'They may call back.'},
+        {'title': 'Asseyez-vous', 'subtitle': 'Sans faire d\'effort.'},
+        {'title': 'Ne restez pas seul', 'subtitle': 'Appelez un proche.'},
+        {
+          'title': 'Gardez votre téléphone',
+          'subtitle': 'Ils peuvent rappeler.',
+        },
       ],
     },
   ];
 
   static List<Map<String, Object?>> _goToDesk() => [
     _info(
-      'Go to the front desk',
-      'Without a network, the nurse will finish your sheet with you.',
+      'Allez à l\'accueil',
+      'Sans réseau, l\'infirmier terminera votre fiche avec vous.',
       icon: 'clinic',
     ),
   ];
@@ -426,14 +462,14 @@ abstract final class OfflineTriage {
 
 enum _Level {
   low(
-    'Home care',
-    'Rest. See a nurse within 48 h if it continues.',
-    'Within 48 h',
+    'Soins à la maison',
+    'Reposez-vous. Consultez sous 48 h si cela continue.',
+    'Sous 48 h',
   ),
   moderate(
-    'See a nurse today',
-    'Come to the front desk today. You will get a malaria test if you have a fever.',
-    '30 to 60 min',
+    'Consultation aujourd\'hui',
+    'Venez à l\'accueil aujourd\'hui. Vous ferez un test du paludisme si vous avez de la fièvre.',
+    '30 à 60 min',
   );
 
   const _Level(this.title, this.recommendation, this.waitTime);
